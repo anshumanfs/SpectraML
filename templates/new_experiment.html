@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Experiment - DataLab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-indigo-600 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-white text-2xl font-bold">DataLab</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/experiments" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Experiments
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="px-4 py-6 sm:px-0">
+            <h1 class="text-3xl font-bold text-gray-900">Create New Experiment</h1>
+            <p class="mt-2 text-lg text-gray-600">
+                Set up a new data science experiment
+            </p>
+        </div>
+
+        <!-- Form Section -->
+        <div class="px-4 sm:px-0">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <form id="experimentForm">
+                        <div class="space-y-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700">Experiment Name</label>
+                                <div class="mt-1">
+                                    <input type="text" name="name" id="name" required
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        placeholder="Enter a name for your experiment">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                <div class="mt-1">
+                                    <textarea id="description" name="description" rows="4"
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                                        placeholder="Describe the purpose of this experiment"></textarea>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Experiment Type</h3>
+                                <div class="mt-4 space-y-4">
+                                    <div class="flex items-center">
+                                        <input id="type-classification" name="type" type="radio" value="classification"
+                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                        <label for="type-classification" class="ml-3 block text-sm font-medium text-gray-700">
+                                            Classification
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="type-regression" name="type" type="radio" value="regression"
+                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                        <label for="type-regression" class="ml-3 block text-sm font-medium text-gray-700">
+                                            Regression
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="type-clustering" name="type" type="radio" value="clustering"
+                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                        <label for="type-clustering" class="ml-3 block text-sm font-medium text-gray-700">
+                                            Clustering
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="type-image" name="type" type="radio" value="image"
+                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                        <label for="type-image" class="ml-3 block text-sm font-medium text-gray-700">
+                                            Image Analysis
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="type-other" name="type" type="radio" value="other" checked
+                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                        <label for="type-other" class="ml-3 block text-sm font-medium text-gray-700">
+                                            Other / Exploratory
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <button type="submit" 
+                                    class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Create Experiment
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-10">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">GitHub</span>
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Twitter</span>
+                    <i class="fab fa-twitter text-xl"></i>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2023 DataLab. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('experimentForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/experiment/new', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = `/experiment/${data.experiment_id}`;
+                } else {
+                    alert('Error creating experiment: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating experiment');
+            });
+        });
+    </script>
+</body>
+</html>
