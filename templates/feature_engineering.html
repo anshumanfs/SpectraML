@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Engineering - SpectraML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-indigo-600 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-white text-2xl font-bold">SpectraML</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/experiments" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Experiments
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="/experiment/{{ experiment.id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Experiment
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="px-4 py-6 sm:px-0">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Feature Engineering</h1>
+                    <p class="mt-2 text-gray-600">Experiment: {{ experiment.name }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dataset Selection Section -->
+        <div class="px-4 sm:px-0 mb-6">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Step 1: Select a Dataset</h2>
+                    {% if datasets %}
+                        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {% for dataset in datasets %}
+                            <div class="dataset-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-id="{{ dataset.id }}" data-filename="{{ dataset.filename }}">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                        <i class="fas fa-table"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h3 class="text-md font-medium">{{ dataset.filename }}</h3>
+                                        <p class="text-sm text-gray-500">Type: {{ dataset.filetype }}</p>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex justify-end">
+                                    <button class="preview-dataset-btn px-2 py-1 text-xs text-green-600 hover:text-green-900 focus:outline-none" data-id="{{ dataset.id }}">
+                                        <i class="fas fa-eye mr-1"></i> Preview
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-10">
+                            <i class="fas fa-database text-5xl text-gray-300 mb-3"></i>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">No datasets available</h3>
+                            <p class="mt-1 max-w-2xl text-sm text-gray-500 mx-auto">
+                                Upload a dataset first before applying feature engineering.
+                            </p>
+                            <div class="mt-5">
+                                <a href="/experiment/{{ experiment.id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                    <i class="fas fa-upload mr-2"></i> Back to Experiment
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations Section -->
+        <div id="operationsSection" class="px-4 sm:px-0 mb-6 hidden">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Step 2: Add Feature Engineering Operations</h2>
+                    
+                    <div class="mt-4 border-b border-gray-200 pb-4">
+                        <div class="sm:flex sm:items-center">
+                            <div class="sm:flex-auto">
+                                <h3 class="text-base font-medium text-gray-900">Operations Pipeline</h3>
+                                <p class="mt-1 text-sm text-gray-500">Operations will be applied in sequence.</p>
+                            </div>
+                            <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+                                <button id="addOperationBtn" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                    <i class="fas fa-plus mr-2"></i> Add Operation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="operationsList" class="mt-4 space-y-4">
+                        <div class="text-sm text-gray-500 text-center py-4">No operations added yet. Click "Add Operation" to start building your pipeline.</div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button id="previewBtn" type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <i class="fas fa-eye mr-2"></i> Preview Results
+                        </button>
+                        <button id="applyBtn" type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            <i class="fas fa-play mr-2"></i> Apply & Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operation Selection Modal -->
+        <div id="operationModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                    <div>
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                            <i class="fas fa-wrench text-indigo-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-5">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Add Feature Engineering Operation
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    Select an operation to add to your pipeline
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5 sm:mt-6">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {% for operation in available_operations %}
+                            <div class="operation-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="{{ operation }}">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                        <i class="fas fa-cogs"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h3 class="text-md font-medium">{{ operation.replace('_', ' ').title() }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-5">
+                            <button id="cancelOperation" type="button" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div id="previewSection" class="px-4 sm:px-0 mb-6 hidden">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Step 3: Preview Changes</h2>
+                    <div id="previewLoading" class="py-10 text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-indigo-500 mb-3"></i>
+                        <p class="text-gray-600">Previewing changes, please wait...</p>
+                    </div>
+                    <div id="previewContent" class="hidden">
+                        <div class="mt-4 p-4 bg-gray-50 rounded-md">
+                            <h3 class="text-md font-medium text-gray-900">Dataset Shape</h3>
+                            <p>Original: <span id="originalShape"></span></p>
+                            <p>New: <span id="newShape"></span></p>
+                        </div>
+                        <div class="mt-5">
+                            <h3 class="text-lg font-medium text-gray-900">Operations Summary</h3>
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operation</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameters</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Changes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="operationsSummaryBody" class="bg-white divide-y divide-gray-200">
+                                    <!-- Summary rows will be added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-5">
+                            <h3 class="text-lg font-medium text-gray-900">Data Preview</h3>
+                            <div id="dataPreview" class="mt-3">
+                                <!-- Data preview will be added dynamically -->
+                            </div>
+                        </div>
+                        <div class="mt-5 flex justify-end space-x-3">
+                            <button id="backToOperationsBtn" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Back to Operations
+                            </button>
+                            <button id="confirmApplyBtn" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                Apply and Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Preview Modal -->
+    <div id="dataPreviewModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
+                <div>
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                        <i class="fas fa-table text-green-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-5">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="preview-modal-title">
+                            Dataset Preview
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500" id="preview-dataset-info">
+                                Loading dataset preview...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="datasetPreviewLoading" class="py-10 text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-indigo-500 mb-3"></i>
+                    <p class="text-gray-600">Loading data preview, please wait...</p>
+                </div>
+                
+                <div id="datasetPreviewContent" class="mt-5 hidden">
+                    <div class="border rounded-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200" id="previewTable">
+                                <thead class="bg-gray-50">
+                                    <tr id="previewTableHeader">
+                                        <!-- Table headers will be added dynamically -->
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="previewTableBody">
+                                    <!-- Table rows will be added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 sm:mt-6">
+                    <button type="button" id="closePreviewModal" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-10">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">GitHub</span>
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Twitter</span>
+                    <i class="fab fa-twitter text-xl"></i>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2023 SpectraML. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Global variables
+        let selectedDatasetFilename = '';
+        let operations = [];
+        
+        // Handle dataset selection
+        document.querySelectorAll('.dataset-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Update visual selection
+                document.querySelectorAll('.dataset-card').forEach(c => 
+                    c.classList.remove('ring-2', 'ring-indigo-500'));
+                this.classList.add('ring-2', 'ring-indigo-500');
+                
+                // Store selected dataset
+                selectedDatasetFilename = this.dataset.filename;
+                
+                // Show operations section
+                document.getElementById('operationsSection').classList.remove('hidden');
+                
+                // Hide later sections if they were visible
+                document.getElementById('previewSection').classList.add('hidden');
+                
+                // Scroll to operations section
+                document.getElementById('operationsSection').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        
+        // Show operations modal
+        document.getElementById('addOperationBtn').addEventListener('click', function() {
+            document.getElementById('operationModal').classList.remove('hidden');
+        });
+        
+        // Hide operations modal
+        document.getElementById('cancelOperation').addEventListener('click', function() {
+            document.getElementById('operationModal').classList.add('hidden');
+        });
+        
+        // Handle operation selection
+        document.querySelectorAll('.operation-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const operationType = this.dataset.type;
+                
+                // Add operation to list
+                operations.push({ 
+                    type: operationType, 
+                    params: {}
+                });
+                
+                // Update operations list
+                updateOperationsList();
+                
+                // Hide modal
+                document.getElementById('operationModal').classList.add('hidden');
+            });
+        });
+        
+        // Update operations list
+        function updateOperationsList() {
+            const operationsList = document.getElementById('operationsList');
+            
+            if (operations.length === 0) {
+                operationsList.innerHTML = '<div class="text-sm text-gray-500 text-center py-4">No operations added yet. Click "Add Operation" to start building your pipeline.</div>';
+                return;
+            }
+            
+            operationsList.innerHTML = '';
+            
+            operations.forEach((op, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white shadow overflow-hidden border border-gray-200 sm:rounded-lg';
+                
+                const title = op.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Format parameters for display
+                let paramsStr = '';
+                if (op.params) {
+                    Object.entries(op.params).forEach(([key, value]) => {
+                        if (key === 'columns' && Array.isArray(value)) {
+                            paramsStr += `${key}: [${value.join(', ')}], `;
+                        } else {
+                            paramsStr += `${key}: ${value}, `;
+                        }
+                    });
+                    if (paramsStr) {
+                        paramsStr = paramsStr.slice(0, -2); // Remove trailing comma and space
+                    }
+                }
+                
+                div.innerHTML = `
+                    <div class="px-4 py-4 sm:px-6 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">${index + 1}. ${title}</h3>
+                            <p class="mt-1 max-w-2xl text-sm text-gray-500">${paramsStr || 'Default parameters'}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button type="button" class="op-move-up-btn inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none" data-index="${index}" ${index === 0 ? 'disabled' : ''}>
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button type="button" class="op-move-down-btn inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none" data-index="${index}" ${index === operations.length - 1 ? 'disabled' : ''}>
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                            <button type="button" class="op-remove-btn inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                operationsList.appendChild(div);
+            });
+            
+            // Add event listeners to operation buttons
+            document.querySelectorAll('.op-remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    operations.splice(index, 1);
+                    updateOperationsList();
+                });
+            });
+            
+            document.querySelectorAll('.op-move-up-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    if (index > 0) {
+                        [operations[index], operations[index - 1]] = [operations[index - 1], operations[index]];
+                        updateOperationsList();
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.op-move-down-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    if (index < operations.length - 1) {
+                        [operations[index], operations[index + 1]] = [operations[index + 1], operations[index]];
+                        updateOperationsList();
+                    }
+                });
+            });
+        }
+        
+        // Handle preview button
+        document.getElementById('previewBtn').addEventListener('click', function() {
+            if (operations.length === 0) {
+                alert('Please add at least one operation to preview');
+                return;
+            }
+            
+            if (!selectedDatasetFilename) {
+                alert('Please select a dataset first');
+                return;
+            }
+            
+            // Show preview section with loading indicator
+            document.getElementById('previewSection').classList.remove('hidden');
+            document.getElementById('previewLoading').classList.remove('hidden');
+            document.getElementById('previewContent').classList.add('hidden');
+            
+            // Scroll to preview section
+            document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
+            
+            // Prepare request data
+            const requestData = {
+                filename: selectedDatasetFilename,
+                operations: operations
+            };
+            
+            // Make API request
+            fetch('/api/feature-engineering/preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error previewing operations: ' + data.error);
+                    document.getElementById('previewSection').classList.add('hidden');
+                    return;
+                }
+                
+                // Update preview content
+                updatePreviewContent(data);
+                
+                // Hide loading indicator and show content
+                document.getElementById('previewLoading').classList.add('hidden');
+                document.getElementById('previewContent').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error previewing operations');
+                document.getElementById('previewSection').classList.add('hidden');
+            });
+        });
+        
+        // Update preview content
+        function updatePreviewContent(data) {
+            // Update shapes
+            document.getElementById('originalShape').textContent = 
+                `${data.original_shape.rows} rows × ${data.original_shape.columns} columns`;
+            document.getElementById('newShape').textContent = 
+                `${data.new_shape.rows} rows × ${data.new_shape.columns} columns`;
+            
+            // Update operations summary
+            const summaryBody = document.getElementById('operationsSummaryBody');
+            summaryBody.innerHTML = '';
+            
+            data.operations.forEach((op, index) => {
+                const row = document.createElement('tr');
+                
+                // Operation column
+                const opCell = document.createElement('td');
+                opCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+                opCell.textContent = `${index + 1}. ${op.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+                
+                // Parameters column
+                const paramsCell = document.createElement('td');
+                paramsCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                let paramsText = '';
+                if (op.params) {
+                    for (const key in op.params) {
+                        if (key === 'columns' && Array.isArray(op.params[key])) {
+                            paramsText += `${key}: [${op.params[key].join(', ')}]<br>`;
+                        } else {
+                            paramsText += `${key}: ${op.params[key]}<br>`;
+                        }
+                    }
+                }
+                paramsCell.innerHTML = paramsText || 'Default parameters';
+                
+                // Changes column
+                const changesCell = document.createElement('td');
+                changesCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                let changesText = '';
+                
+                if (op.columns_added && op.columns_added.length > 0) {
+                    changesText += `<span class="text-green-600">+${op.columns_added.length} columns</span><br>`;
+                }
+                
+                if (op.columns_removed && op.columns_removed.length > 0) {
+                    changesText += `<span class="text-red-600">-${op.columns_removed.length} columns</span><br>`;
+                }
+                
+                if (op.metrics) {
+                    for (const key in op.metrics) {
+                        changesText += `${key}: ${op.metrics[key]}<br>`;
+                    }
+                }
+                
+                if (op.error) {
+                    changesText = `<span class="text-red-600">Error: ${op.error}</span>`;
+                }
+                
+                changesCell.innerHTML = changesText || 'No changes';
+                
+                // Append cells to row
+                row.appendChild(opCell);
+                row.appendChild(paramsCell);
+                row.appendChild(changesCell);
+                
+                // Append row to table
+                summaryBody.appendChild(row);
+            });
+            
+            // Update data preview
+            const dataPreview = document.getElementById('dataPreview');
+            if (data.preview_sample && data.preview_sample.length > 0) {
+                // Get all column names
+                const columns = Object.keys(data.preview_sample[0]);
+                
+                let tableHtml = '<table class="min-w-full divide-y divide-gray-200">';
+                
+                // Table header
+                tableHtml += '<thead class="bg-gray-50"><tr>';
+                columns.forEach(col => {
+                    tableHtml += `<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${col}</th>`;
+                });
+                tableHtml += '</tr></thead>';
+                
+                // Table body
+                tableHtml += '<tbody class="bg-white divide-y divide-gray-200">';
+                data.preview_sample.forEach(row => {
+                    tableHtml += '<tr>';
+                    columns.forEach(col => {
+                        tableHtml += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row[col] !== null ? row[col] : 'null'}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                });
+                tableHtml += '</tbody></table>';
+                
+                dataPreview.innerHTML = tableHtml;
+            } else {
+                dataPreview.innerHTML = '<p class="text-gray-500">No preview data available</p>';
+            }
+        }
+        
+        // Handle back to operations button
+        document.getElementById('backToOperationsBtn').addEventListener('click', function() {
+            document.getElementById('previewSection').classList.add('hidden');
+        });
+        
+        // Handle apply and save button
+        document.getElementById('applyBtn').addEventListener('click', function() {
+            if (operations.length === 0) {
+                alert('Please add at least one operation to apply');
+                return;
+            }
+            
+            if (!selectedDatasetFilename) {
+                alert('Please select a dataset first');
+                return;
+            }
+            
+            // Confirm before applying
+            if (!confirm('Are you sure you want to apply these operations to the dataset? This will create a new processed dataset.')) {
+                return;
+            }
+            
+            // Prepare request data
+            const requestData = {
+                filename: selectedDatasetFilename,
+                operations: operations,
+                experiment_id: "{{ experiment.id }}"
+            };
+            
+            // Make API request
+            fetch('/api/feature-engineering', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error applying operations: ' + data.error);
+                    return;
+                }
+                
+                alert('Feature engineering operations applied successfully. A new processed dataset has been created.');
+                
+                // Redirect back to experiment page
+                window.location.href = `/experiment/{{ experiment.id }}`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error applying operations');
+            });
+        });
+        
+        // Handle confirm apply button in preview section
+        document.getElementById('confirmApplyBtn').addEventListener('click', function() {
+            document.getElementById('applyBtn').click();
+        });
+        
+        // Handle operation move up/down
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('op-move-up-btn') || e.target.closest('.op-move-up-btn')) {
+                const btn = e.target.classList.contains('op-move-up-btn') ? e.target : e.target.closest('.op-move-up-btn');
+                const index = parseInt(btn.dataset.index);
+                
+                if (index > 0) {
+                    // Swap operations
+                    [operations[index], operations[index - 1]] = [operations[index - 1], operations[index]];
+                    updateOperationsList();
+                }
+            }
+            
+            if (e.target.classList.contains('op-move-down-btn') || e.target.closest('.op-move-down-btn')) {
+                const btn = e.target.classList.contains('op-move-down-btn') ? e.target : e.target.closest('.op-move-down-btn');
+                const index = parseInt(btn.dataset.index);
+                
+                if (index < operations.length - 1) {
+                    // Swap operations
+                    [operations[index], operations[index + 1]] = [operations[index + 1], operations[index]];
+                    updateOperationsList();
+                }
+            }
+        });
+        
+        // Handle dataset preview
+        document.querySelectorAll('.preview-dataset-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent triggering dataset selection
+                
+                const datasetId = this.dataset.id;
+                
+                // Show modal with loading state
+                const modal = document.getElementById('dataPreviewModal');
+                modal.classList.remove('hidden');
+                
+                document.getElementById('datasetPreviewLoading').classList.remove('hidden');
+                document.getElementById('datasetPreviewContent').classList.add('hidden');
+                
+                // Fetch dataset preview data
+                fetch(`/api/dataset/preview/${datasetId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error loading preview: ' + data.error);
+                            return;
+                        }
+                        
+                        // Update dataset info
+                        const dataset = data.dataset;
+                        const preview = data.preview;
+                        
+                        document.getElementById('preview-modal-title').textContent = `Preview: ${dataset.filename}`;
+                        document.getElementById('preview-dataset-info').textContent = 
+                            `Showing ${preview.rows.length} of ${preview.total_rows} rows | ${preview.total_columns} columns | Type: ${dataset.filetype}`;
+                        
+                        // Update table header
+                        const headerRow = document.getElementById('previewTableHeader');
+                        headerRow.innerHTML = '';
+                        
+                        preview.columns.forEach(col => {
+                            const th = document.createElement('th');
+                            th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                            th.textContent = col.name;
+                            headerRow.appendChild(th);
+                        });
+                        
+                        // Update table body
+                        const tableBody = document.getElementById('previewTableBody');
+                        tableBody.innerHTML = '';
+                        
+                        preview.rows.forEach(row => {
+                            const tr = document.createElement('tr');
+                            
+                            preview.columns.forEach(col => {
+                                const td = document.createElement('td');
+                                td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                                
+                                // Format the cell value based on its type
+                                const value = row[col.name];
+                                if (value === null || value === undefined) {
+                                    td.innerHTML = '<span class="text-gray-400 italic">null</span>';
+                                } else if (typeof value === 'object') {
+                                    td.textContent = JSON.stringify(value);
+                                } else {
+                                    td.textContent = value;
+                                }
+                                
+                                tr.appendChild(td);
+                            });
+                            
+                            tableBody.appendChild(tr);
+                        });
+                        
+                        // Hide loading, show content
+                        document.getElementById('datasetPreviewLoading').classList.add('hidden');
+                        document.getElementById('datasetPreviewContent').classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error loading preview');
+                        modal.classList.add('hidden');
+                    });
+            });
+        });
+        
+        // Close preview modal
+        document.getElementById('closePreviewModal').addEventListener('click', function() {
+            document.getElementById('dataPreviewModal').classList.add('hidden');
+        });
+    </script>
+</body>
+</html>

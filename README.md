@@ -1,6 +1,6 @@
-# DataLab - Comprehensive Data Science Platform
+# SpectraML - Comprehensive Data Science Platform
 
-DataLab is a web-based application for data analysis, visualization, machine learning model training, and image processing. This tool enables data scientists and analysts to work efficiently with various data types through an intuitive interface.
+SpectraML is a web-based application for data analysis, visualization, machine learning model training, and image processing. This tool enables data scientists and analysts to work efficiently with various data types through an intuitive interface.
 
 ## Features
 
@@ -16,8 +16,8 @@ DataLab is a web-based application for data analysis, visualization, machine lea
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/datalab.git
-   cd datalab
+   git clone https://github.com/yourusername/spectraml.git
+   cd spectraml
    ```
 
 2. Create a virtual environment:

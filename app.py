@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, flash, redirect
 from werkzeug.utils import secure_filename
 import os
 import json
 import uuid
 import sqlite3
 from datetime import datetime
+import pandas as pd
 
 from modules.data_loader import DataLoader
 from modules.visualization import Visualizer
@@ -158,6 +159,50 @@ def engineer_features():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/feature-engineering', methods=['POST'])
+def apply_feature_engineering():
+    """Apply feature engineering operations and save the result as a new dataset"""
+    data = request.json
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], data.get('filename'))
+    operations = data.get('operations', [])
+    experiment_id = data.get('experiment_id')
+    
+    try:
+        # Apply operations and save result
+        result = feature_engineer.apply_operations(file_path, operations)
+        
+        # Register the new processed dataset with the experiment
+        processed_filename = os.path.basename(result['output_file'])
+        file_type = processed_filename.split('.')[-1].lower()
+        
+        # Add metadata about processing history
+        metadata = {
+            'source_file': data.get('filename'),
+            'processing_date': datetime.now().isoformat(),
+            'operations': operations,
+            'processing_stats': {
+                'original_rows': result['data_info']['num_rows'],
+                'original_columns': result['data_info']['num_columns']
+            }
+        }
+        
+        # Add processed dataset to experiment
+        dataset_id = experiment_manager.add_dataset(
+            experiment_id=experiment_id,
+            filename=processed_filename,
+            filetype=file_type,
+            metadata=metadata
+        )
+        
+        return jsonify({
+            'success': True,
+            'dataset_id': dataset_id,
+            'filename': processed_filename,
+            'data_info': result['data_info']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/train-model', methods=['POST'])
 def train_model():
     data = request.json
@@ -208,6 +253,144 @@ def delete_experiment(exp_id):
             return jsonify({'success': False, 'error': 'Failed to delete experiment'}), 400
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/dataset/<dataset_id>/visualize')
+def visualize_dataset(dataset_id):
+    """Visualization page for a specific dataset"""
+    # Get dataset information
+    dataset = experiment_manager.get_dataset(dataset_id)
+    if not dataset:
+        return "Dataset not found", 404
+    
+    # Get experiment for this dataset
+    experiment = experiment_manager.get_experiment(dataset['experiment_id'])
+    
+    # Get file path
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], dataset['filename'])
+    
+    # Load initial data info for display
+    data_info = None
+    try:
+        data_info = loader.get_data_info(file_path, dataset['filetype'])
+    except Exception as e:
+        flash(f"Error loading dataset: {str(e)}", "error")
+    
+    return render_template(
+        'dataset_visualize.html', 
+        dataset=dataset, 
+        experiment=experiment,
+        data_info=data_info
+    )
+
+@app.route('/experiment/<exp_id>/visualize')
+def visualize_experiment(exp_id):
+    """Visualization creation page for an experiment"""
+    experiment = experiment_manager.get_experiment(exp_id)
+    if not experiment:
+        return "Experiment not found", 404
+    
+    # Get datasets for this experiment
+    datasets = experiment.get('datasets', [])
+    if not datasets:
+        return redirect(f'/experiment/{exp_id}')
+    
+    return render_template(
+        'experiment_visualize.html', 
+        experiment=experiment,
+        datasets=datasets
+    )
+
+@app.route('/experiment/<exp_id>/train-model')
+def train_model_page(exp_id):
+    """Model training page for an experiment"""
+    experiment = experiment_manager.get_experiment(exp_id)
+    if not experiment:
+        return "Experiment not found", 404
+    
+    # Get datasets for this experiment
+    datasets = experiment.get('datasets', [])
+    
+    # For each dataset, get column information if possible
+    for dataset in datasets:
+        try:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], dataset['filename'])
+            if os.path.exists(file_path):
+                # Get brief column info (just names and types) to avoid large payload
+                df = loader.load_data(file_path, dataset['filetype'])
+                dataset['columns'] = [
+                    {
+                        'name': col,
+                        'dtype': str(df[col].dtype),
+                        'is_numeric': pd.api.types.is_numeric_dtype(df[col])
+                    }
+                    for col in df.columns
+                ]
+        except Exception as e:
+            print(f"Error loading column info for dataset {dataset['filename']}: {str(e)}")
+            dataset['columns'] = []
+    
+    return render_template(
+        'train_model.html', 
+        experiment=experiment,
+        datasets=datasets
+    )
+
+@app.route('/experiment/<exp_id>/feature-engineering')
+def feature_engineering_page(exp_id):
+    """Feature engineering page for an experiment"""
+    experiment = experiment_manager.get_experiment(exp_id)
+    if not experiment:
+        return "Experiment not found", 404
+    
+    # Get datasets for this experiment
+    datasets = experiment.get('datasets', [])
+    
+    # Get available feature engineering operations
+    available_operations = feature_engineer.supported_operations
+    
+    return render_template(
+        'feature_engineering.html', 
+        experiment=experiment,
+        datasets=datasets,
+        available_operations=available_operations
+    )
+
+@app.route('/api/feature-engineering/preview', methods=['POST'])
+def preview_feature_engineering():
+    """Preview the results of feature engineering operations"""
+    data = request.json
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], data.get('filename'))
+    operations = data.get('operations', [])
+    
+    try:
+        # Apply operations without saving
+        preview_result = feature_engineer.preview_operations(file_path, operations)
+        return jsonify(preview_result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/dataset/preview/<dataset_id>', methods=['GET'])
+def preview_dataset(dataset_id):
+    """Get a preview of a dataset"""
+    try:
+        # Get dataset info
+        dataset = experiment_manager.get_dataset(dataset_id)
+        if not dataset:
+            return jsonify({'error': 'Dataset not found'}), 404
+        
+        # Load file
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], dataset['filename'])
+        
+        # Get preview data - limit to 10 rows for performance
+        preview_data = loader.get_preview_data(file_path, dataset['filetype'], max_rows=10)
+        
+        return jsonify({
+            'success': True,
+            'dataset': dataset,
+            'preview': preview_data
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     init_db()

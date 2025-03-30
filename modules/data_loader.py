@@ -13,6 +13,7 @@ class DataLoader:
         self.supported_formats = ['csv', 'xlsx', 'json']
     
     def load_data(self, file_path, file_type=None):
+        print(f"Loading data from {file_path} of type {file_type}")
         """
         Load data from a file into a pandas DataFrame
         
@@ -146,3 +147,62 @@ class DataLoader:
             df.to_json(file_path, orient='records')
         
         return file_path
+    
+    def get_preview_data(self, file_path, file_type, max_rows=10):
+        """
+        Get a preview of the data from a file
+        
+        Parameters:
+        -----------
+        file_path : str
+            Path to the data file
+        file_type : str
+            Type of the file
+        max_rows : int, optional
+            Maximum number of rows to return
+            
+        Returns:
+        --------
+        dict
+            Preview data and summary information
+        """
+        try:
+            # Handle different file types
+            if file_type.lower() in ['csv', 'txt']:
+                # Try different encodings
+                try:
+                    df = pd.read_csv(file_path, nrows=max_rows)
+                except UnicodeDecodeError:
+                    # Try with latin1 encoding for non-UTF8 files
+                    df = pd.read_csv(file_path, encoding='latin1', nrows=max_rows)
+            elif file_type.lower() in ['xlsx', 'xls']:
+                df = pd.read_excel(file_path, nrows=max_rows)
+            elif file_type.lower() == 'json':
+                # For JSON, read the whole file then slice
+                df = pd.read_json(file_path)
+                df = df.head(max_rows)
+            else:
+                raise ValueError(f"Unsupported file type: {file_type}")
+            
+            # Get column information
+            columns = []
+            for col in df.columns:
+                col_info = {
+                    'name': col,
+                    'dtype': str(df[col].dtype),
+                    'sample_values': df[col].dropna().head(3).tolist(),
+                    'null_count': int(df[col].isna().sum()),
+                }
+                columns.append(col_info)
+            
+            # Convert dataframe to records for JSON serialization
+            records = df.replace({np.nan: None}).to_dict(orient='records')
+            
+            return {
+                'rows': records,
+                'columns': columns,
+                'total_rows': len(df),
+                'total_columns': len(df.columns)
+            }
+        except Exception as e:
+            raise Exception(f"Error getting data preview: {str(e)}")

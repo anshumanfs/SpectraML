@@ -95,6 +95,93 @@ class FeatureEngineer:
             'output_file': output_file
         }
     
+    def preview_operations(self, file_path, operations):
+        """
+        Preview the results of feature engineering operations without saving
+        
+        Parameters:
+        -----------
+        file_path : str
+            Path to the data file
+        operations : list of dict
+            List of operations to apply, each with type and parameters
+            
+        Returns:
+        --------
+        dict
+            Preview results including sample of transformed data and summary
+        """
+        # Load data
+        df = self.data_loader.load_data(file_path)
+        original_shape = df.shape
+        
+        # Track applied operations and their results
+        applied_operations = []
+        
+        # Apply each operation in sequence
+        for op in operations:
+            op_type = op.get('type')
+            params = op.get('params', {})
+            
+            if op_type not in self.supported_operations:
+                warnings.warn(f"Unsupported operation: {op_type}. Skipping.")
+                continue
+            
+            # Apply the operation
+            try:
+                result = self._apply_operation(df, op_type, params)
+                
+                # Update the dataframe with the transformed one
+                df = result.get('data')
+                
+                # Save operation details
+                applied_operations.append({
+                    'type': op_type,
+                    'params': params,
+                    'metrics': result.get('metrics', {}),
+                    'columns_added': result.get('columns_added', []),
+                    'columns_removed': result.get('columns_removed', [])
+                })
+                
+            except Exception as e:
+                applied_operations.append({
+                    'type': op_type,
+                    'params': params,
+                    'error': str(e)
+                })
+        
+        # Create a summary of changes
+        new_shape = df.shape
+        
+        # Get first 5 rows for preview (convert to dict for JSON serialization)
+        preview_sample = df.head(5).to_dict(orient='records')
+        
+        # Get column information
+        columns_info = []
+        for col in df.columns:
+            col_info = {
+                'name': col,
+                'dtype': str(df[col].dtype),
+                'missing': int(df[col].isnull().sum()),
+                'missing_pct': float(df[col].isnull().sum() / len(df) * 100)
+            }
+            columns_info.append(col_info)
+        
+        return {
+            'success': True,
+            'original_shape': {
+                'rows': original_shape[0],
+                'columns': original_shape[1]
+            },
+            'new_shape': {
+                'rows': new_shape[0],
+                'columns': new_shape[1]
+            },
+            'operations': applied_operations,
+            'preview_sample': preview_sample,
+            'columns_info': columns_info
+        }
+    
     def _apply_operation(self, df, op_type, params):
         """
         Apply a single feature engineering operation

@@ -37,15 +37,42 @@ class ModelTrainer:
         dict
             Results of the training including metrics and trained model
         """
-        # Load data
-        df = pd.read_csv(file_path)
+        # Load data with proper encoding handling
+        try:
+            # Try UTF-8 first (most common)
+            df = pd.read_csv(file_path, encoding='utf-8')
+        except UnicodeDecodeError:
+            try:
+                # Try Latin-1 (very permissive encoding)
+                df = pd.read_csv(file_path, encoding='latin1')
+            except Exception as e:
+                # If still failing, try to detect encoding
+                import chardet
+                with open(file_path, 'rb') as f:
+                    result = chardet.detect(f.read())
+                
+                # Try with detected encoding
+                detected_encoding = result['encoding']
+                df = pd.read_csv(file_path, encoding=detected_encoding)
+        
         target_column = config.get('target_column')
         
         if not target_column or target_column not in df.columns:
             raise ValueError("A valid target column must be specified")
         
+        # Get feature columns (either specified or all columns except target)
+        feature_columns = config.get('feature_columns')
+        if not feature_columns:
+            # Use all columns except target
+            feature_columns = [col for col in df.columns if col != target_column]
+        
+        # Make sure all specified feature columns exist in the dataframe
+        missing_cols = [col for col in feature_columns if col not in df.columns]
+        if missing_cols:
+            raise ValueError(f"Missing columns in dataset: {', '.join(missing_cols)}")
+        
         # Split data into features and target
-        X = df.drop(columns=[target_column])
+        X = df[feature_columns]
         y = df[target_column]
         
         # Split data into training and testing sets

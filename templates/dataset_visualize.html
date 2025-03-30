@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Visualization - SpectraML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-indigo-600 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-white text-2xl font-bold">SpectraML</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/experiments" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Experiments
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="/experiment/{{ experiment.id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Experiment
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="px-4 py-6 sm:px-0">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Dataset: {{ dataset.filename }}</h1>
+                    <p class="mt-2 text-gray-600">Experiment: {{ experiment.name }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Info Section -->
+        <div class="px-4 sm:px-0">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Dataset Overview</h2>
+                    {% if data_info %}
+                        <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                            <div class="bg-white overflow-hidden shadow rounded-lg border">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Rows</dt>
+                                    <dd class="mt-1 text-xl font-semibold text-gray-900">{{ data_info.num_rows }}</dd>
+                                </div>
+                            </div>
+                            <div class="bg-white overflow-hidden shadow rounded-lg border">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Columns</dt>
+                                    <dd class="mt-1 text-xl font-semibold text-gray-900">{{ data_info.num_columns }}</dd>
+                                </div>
+                            </div>
+                            <div class="bg-white overflow-hidden shadow rounded-lg border">
+                                <div class="px-4 py-5 sm:p-6">
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Missing Values</dt>
+                                    <dd class="mt-1 text-xl font-semibold text-gray-900">{{ data_info.missing_values }} ({{ "%.2f"|format(data_info.missing_percentage) }}%)</dd>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="mt-2 text-gray-600">Unable to load data information.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="px-4 sm:px-0 mt-6">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Create Visualization</h2>
+                    <div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-chart-scatter"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Scatter Plot</h3>
+                                    <p class="text-sm text-gray-500">Show relationships between variables</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="histogram">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Histogram</h3>
+                                    <p class="text-sm text-gray-500">Show distribution of a single variable</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="box">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-green-100 text-green-800">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Box Plot</h3>
+                                    <p class="text-sm text-gray-500">Show distribution statistics</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization Configuration -->
+        <div id="vizConfig" class="px-4 sm:px-0 mt-6 hidden">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900" id="configTitle">Configure Visualization</h2>
+                    <form id="vizForm" class="mt-4">
+                        <input type="hidden" id="vizType" name="vizType" value="">
+                        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div class="sm:col-span-3">
+                                <label for="xAxis" class="block text-sm font-medium text-gray-700">X-Axis Column</label>
+                                <select id="xAxis" name="xAxis" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option value="">Select a column</option>
+                                    {% if data_info and data_info.columns %}
+                                        {% for column in data_info.columns %}
+                                            <option value="{{ column.name }}">{{ column.name }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-3">
+                                <label for="yAxis" class="block text-sm font-medium text-gray-700">Y-Axis Column</label>
+                                <select id="yAxis" name="yAxis" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option value="">Select a column</option>
+                                    {% if data_info and data_info.columns %}
+                                        {% for column in data_info.columns %}
+                                            <option value="{{ column.name }}">{{ column.name }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-6">
+                                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Generate Visualization
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization Result -->
+        <div id="vizResult" class="px-4 sm:px-0 mt-6 hidden">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-lg font-medium text-gray-900">Visualization Result</h2>
+                    <div id="plotContainer" class="mt-4 h-96"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-10">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">GitHub</span>
+                    <i class="fab fa-github text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Twitter</span>
+                    <i class="fab fa-twitter text-xl"></i>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2023 SpectraML. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Handle visualization type selection
+        document.querySelectorAll('.viz-type-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const vizType = this.dataset.type;
+                document.getElementById('vizType').value = vizType;
+                document.getElementById('configTitle').textContent = `Configure ${vizType.charAt(0).toUpperCase() + vizType.slice(1)} Plot`;
+                
+                // Show configuration section
+                document.getElementById('vizConfig').classList.remove('hidden');
+                
+                // Reset form
+                document.getElementById('vizForm').reset();
+                
+                // Hide result section
+                document.getElementById('vizResult').classList.add('hidden');
+            });
+        });
+        
+        // Handle visualization form submission
+        document.getElementById('vizForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const vizType = document.getElementById('vizType').value;
+            const xAxis = document.getElementById('xAxis').value;
+            const yAxis = document.getElementById('yAxis').value;
+            
+            // Validate form
+            if (vizType === 'scatter' && (!xAxis || !yAxis)) {
+                alert('Please select both X and Y axis columns');
+                return;
+            }
+            
+            if ((vizType === 'histogram' || vizType === 'box') && !xAxis) {
+                alert('Please select X axis column');
+                return;
+            }
+            
+            // Prepare request data
+            const requestData = {
+                filename: '{{ dataset.filename }}',
+                viz_type: vizType,
+                params: {
+                    x: xAxis,
+                    y: yAxis
+                }
+            };
+            
+            // Make API request
+            fetch('/api/visualize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error creating visualization: ' + data.error);
+                    return;
+                }
+                
+                // Display visualization
+                document.getElementById('vizResult').classList.remove('hidden');
+                
+                // Create plot
+                Plotly.newPlot('plotContainer', data.figure.data, data.figure.layout);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating visualization');
+            });
+        });
+    </script>
+</body>
+</html>
