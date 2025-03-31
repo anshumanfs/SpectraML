@@ -270,6 +270,33 @@ def delete_dataset(exp_id, dataset_id):
         logging.error(f"Error deleting dataset: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/experiment/<exp_id>/model/<model_id>', methods=['DELETE'])
+def delete_model(exp_id, model_id):
+    """Delete a model from an experiment"""
+    try:
+        # Add logging for debugging
+        logging.info(f"Deleting model {model_id} from experiment {exp_id}")
+        
+        # Call the experiment manager to delete the model
+        success = experiment_manager.delete_model(exp_id, model_id)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Model deleted successfully'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to delete model'
+            })
+    except Exception as e:
+        logging.error(f"Error deleting model: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 @app.route('/dataset/<dataset_id>/visualize')
 def visualize_dataset(dataset_id):
     """Visualization page for a specific dataset"""
@@ -629,6 +656,46 @@ def view_visualization(viz_id):
     except Exception as e:
         flash(f"Error loading visualization: {str(e)}", "error")
         return redirect('/')
+
+# Create a custom Jinja2 filter for datetime formatting
+@app.template_filter('datetime')
+def format_datetime(value, format='%B %d, %Y at %H:%M'):
+    """Format a datetime string to a readable format"""
+    if value is None:
+        return ""
+    
+    if isinstance(value, str):
+        try:
+            # Try to parse ISO format
+            dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            return dt.strftime(format)
+        except (ValueError, AttributeError):
+            # If parsing fails, return the original string
+            return value
+    
+    # If value is already a datetime object
+    if isinstance(value, datetime):
+        return value.strftime(format)
+    
+    # Default fallback
+    return str(value)
+
+# Add a custom Jinja2 filter for JSON parsing
+@app.template_filter('fromjson')
+def parse_json(value):
+    """Parse a JSON string into a Python object"""
+    if value is None or value == "":
+        return {}
+    
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return empty dict
+            return {}
+    
+    # If value is already a dict or other object, return as is
+    return value
 
 if __name__ == "__main__":
     init_db()

@@ -476,3 +476,63 @@ class ExperimentManager:
             return False
         finally:
             conn.close()
+    
+    def delete_model(self, experiment_id, model_id):
+        """
+        Delete a model from an experiment
+        
+        Parameters:
+        -----------
+        experiment_id : str
+            ID of the experiment
+        model_id : str
+            ID of the model to delete
+            
+        Returns:
+        --------
+        bool
+            True if deletion was successful, False otherwise
+        """
+        try:
+            # First, get the model information to find the model file
+            conn = self.get_db_connection()
+            model = conn.execute(
+                "SELECT * FROM models WHERE id = ? AND experiment_id = ?",
+                (model_id, experiment_id)
+            ).fetchone()
+            
+            if not model:
+                conn.close()
+                raise ValueError(f"Model {model_id} not found in experiment {experiment_id}")
+            
+            # Get model file path from the stored configuration if available
+            model_path = None
+            if model['config']:
+                try:
+                    config = json.loads(model['config'])
+                    model_path = config.get('model_path')
+                except json.JSONDecodeError:
+                    # If config is not valid JSON, continue without model file deletion
+                    pass
+            
+            # Delete the model record from the database
+            conn.execute(
+                "DELETE FROM models WHERE id = ? AND experiment_id = ?",
+                (model_id, experiment_id)
+            )
+            conn.commit()
+            conn.close()
+            
+            # Delete the model file if path was found
+            if model_path and os.path.exists(model_path):
+                try:
+                    os.remove(model_path)
+                    print(f"Deleted model file: {model_path}")
+                except Exception as e:
+                    print(f"Warning: Failed to delete model file {model_path}: {str(e)}")
+                    # Continue even if file deletion fails
+            
+            return True
+        except Exception as e:
+            print(f"Error deleting model: {str(e)}")
+            return False

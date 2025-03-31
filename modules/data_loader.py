@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import csv
 
 class DataLoader:
     """
@@ -12,7 +13,7 @@ class DataLoader:
     def __init__(self):
         self.supported_formats = ['csv', 'xlsx', 'json']
     
-    def load_data(self, file_path, file_type=None):
+    def load_data(self, file_path, file_type=None, **kwargs):
         """
         Load data from a file
         
@@ -22,6 +23,12 @@ class DataLoader:
             Path to the data file
         file_type : str, optional
             Type of file (inferred from extension if not provided)
+        **kwargs : dict
+            Additional parameters for data loading:
+            - csv_delimiter: str, delimiter for CSV files (default: ',')
+            - csv_quotechar: str, character for quoting fields (default: '"')
+            - skip_bad_lines: bool, skip lines with parsing errors (default: False)
+            - max_rows: int, maximum number of rows to load
             
         Returns:
         --------
@@ -33,11 +40,64 @@ class DataLoader:
         
         try:
             if file_type == 'csv':
-                df = pd.read_csv(file_path)
+                # Extract CSV-specific parameters
+                csv_delimiter = kwargs.get('csv_delimiter', ',')
+                csv_quotechar = kwargs.get('csv_quotechar', '"')
+                skip_bad_lines = kwargs.get('skip_bad_lines', False)
+                max_rows = kwargs.get('max_rows', None)
+                
+                # Detect if we should skip bad lines based on error
+                try:
+                    # First attempt standard parsing
+                    df = pd.read_csv(
+                        file_path,
+                        delimiter=csv_delimiter,
+                        quotechar=csv_quotechar,
+                        nrows=max_rows
+                    )
+                except pd.errors.ParserError as e:
+                    print(f"CSV parsing error: {str(e)}")
+                    
+                    if skip_bad_lines or kwargs.get('auto_detect_issues', True):
+                        print("Attempting to load with error handling options...")
+                        
+                        # Enable error skipping and try different dialect detection
+                        df = pd.read_csv(
+                            file_path,
+                            delimiter=csv_delimiter,
+                            quotechar=csv_quotechar,
+                            error_bad_lines=False,  # Don't raise error on bad lines
+                            warn_bad_lines=True,    # Warn about bad lines
+                            on_bad_lines='skip',    # Skip bad lines (for pandas >= 1.3)
+                            low_memory=False,       # Better for inconsistent data types
+                            nrows=max_rows
+                        )
+                        
+                        print(f"Successfully loaded CSV with error handling ({len(df)} rows)")
+                    else:
+                        # If we detect CSV dialect issues, let's try to auto-detect delimiter
+                        with open(file_path, 'r', newline='', errors='replace') as f:
+                            sample = f.read(4096)  # Read a sample to detect dialect
+                            
+                        dialect = csv.Sniffer().sniff(sample)
+                        print(f"Detected CSV dialect: delimiter='{dialect.delimiter}', quotechar='{dialect.quotechar}'")
+                        
+                        df = pd.read_csv(
+                            file_path,
+                            delimiter=dialect.delimiter,
+                            quotechar=dialect.quotechar,
+                            nrows=max_rows
+                        )
+                        print(f"Successfully loaded CSV with auto-detected dialect ({len(df)} rows)")
+                        
             elif file_type in ['xls', 'xlsx']:
-                df = pd.read_excel(file_path)
+                max_rows = kwargs.get('max_rows', None)
+                df = pd.read_excel(file_path, nrows=max_rows)
             elif file_type == 'json':
                 df = pd.read_json(file_path)
+                # Apply max_rows limit if specified
+                if kwargs.get('max_rows'):
+                    df = df.head(kwargs.get('max_rows'))
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
             
@@ -68,7 +128,7 @@ class DataLoader:
             print(f"Error loading data: {str(e)}")
             raise
     
-    def get_data_info(self, file_path, file_type=None):
+    def get_data_info(self, file_path, file_type=None, **kwargs):
         """
         Get information about the data in the file
         
@@ -78,13 +138,17 @@ class DataLoader:
             Path to the data file
         file_type : str, optional
             Type of file (csv, xlsx, json). If None, inferred from extension
+        **kwargs : dict
+            Additional parameters for data loading, see load_data method
             
         Returns:
         --------
         dict
             Information about the data
         """
-        df = self.load_data(file_path, file_type)
+        # Pass all kwargs to load_data for flexible CSV handling
+        kwargs['skip_bad_lines'] = kwargs.get('skip_bad_lines', True)  # Default to skipping bad lines for info
+        df = self.load_data(file_path, file_type, **kwargs)
         
         # Convert NumPy int64/float64 to Python native types to ensure JSON serialization
         def convert_to_native_types(obj):
@@ -140,6 +204,57 @@ class DataLoader:
         
         return info
     
+    def get_preview_data(self, file_path, file_type, max_rows=10, **kwargs):
+        """
+        Get a preview of the data from a file
+        
+        Parameters:
+        -----------
+        file_path : str
+            Path to the data file
+        file_type : str
+            Type of the file
+        max_rows : int, optional
+            Maximum number of rows to return
+        **kwargs : dict
+            Additional parameters for data loading, see load_data method
+            
+        Returns:
+        --------
+        dict
+            Preview data and summary information
+        """
+        try:
+            # Set default options for preview
+            kwargs['max_rows'] = max_rows
+            kwargs['skip_bad_lines'] = kwargs.get('skip_bad_lines', True)  # Default to skipping bad lines for preview
+            
+            # Use the enhanced load_data method with all parameters
+            df = self.load_data(file_path, file_type, **kwargs)
+            
+            # Get column information
+            columns = []
+            for col in df.columns:
+                col_info = {
+                    'name': col,
+                    'dtype': str(df[col].dtype),
+                    'sample_values': df[col].dropna().head(3).tolist(),
+                    'null_count': int(df[col].isna().sum()),
+                }
+                columns.append(col_info)
+            
+            # Convert dataframe to records for JSON serialization
+            records = df.replace({np.nan: None}).to_dict(orient='records')
+            
+            return {
+                'rows': records,
+                'columns': columns,
+                'total_rows': len(df),
+                'total_columns': len(df.columns)
+            }
+        except Exception as e:
+            raise Exception(f"Error getting data preview: {str(e)}")
+            
     def save_data(self, df, file_path, file_type=None):
         """
         Save DataFrame to a file
@@ -170,62 +285,3 @@ class DataLoader:
             df.to_json(file_path, orient='records')
         
         return file_path
-    
-    def get_preview_data(self, file_path, file_type, max_rows=10):
-        """
-        Get a preview of the data from a file
-        
-        Parameters:
-        -----------
-        file_path : str
-            Path to the data file
-        file_type : str
-            Type of the file
-        max_rows : int, optional
-            Maximum number of rows to return
-            
-        Returns:
-        --------
-        dict
-            Preview data and summary information
-        """
-        try:
-            # Handle different file types
-            if file_type.lower() in ['csv', 'txt']:
-                # Try different encodings
-                try:
-                    df = pd.read_csv(file_path, nrows=max_rows)
-                except UnicodeDecodeError:
-                    # Try with latin1 encoding for non-UTF8 files
-                    df = pd.read_csv(file_path, encoding='latin1', nrows=max_rows)
-            elif file_type.lower() in ['xlsx', 'xls']:
-                df = pd.read_excel(file_path, nrows=max_rows)
-            elif file_type.lower() == 'json':
-                # For JSON, read the whole file then slice
-                df = pd.read_json(file_path)
-                df = df.head(max_rows)
-            else:
-                raise ValueError(f"Unsupported file type: {file_type}")
-            
-            # Get column information
-            columns = []
-            for col in df.columns:
-                col_info = {
-                    'name': col,
-                    'dtype': str(df[col].dtype),
-                    'sample_values': df[col].dropna().head(3).tolist(),
-                    'null_count': int(df[col].isna().sum()),
-                }
-                columns.append(col_info)
-            
-            # Convert dataframe to records for JSON serialization
-            records = df.replace({np.nan: None}).to_dict(orient='records')
-            
-            return {
-                'rows': records,
-                'columns': columns,
-                'total_rows': len(df),
-                'total_columns': len(df.columns)
-            }
-        except Exception as e:
-            raise Exception(f"Error getting data preview: {str(e)}")

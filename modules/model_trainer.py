@@ -1,305 +1,399 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+import os
+import json
+import pickle
+import logging
+from datetime import datetime
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_squared_error, r2_score
-from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor, StackingClassifier, StackingRegressor
-from sklearn.svm import SVC
-import warnings
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('model_trainer')
 
 class ModelTrainer:
     """
-    Handles training of machine learning models for classification and regression tasks.
+    Handles training of machine learning models.
     """
     
     def __init__(self):
-        self.supported_models = [
-            'logistic_regression', 'linear_regression', 'random_forest_classifier',
-            'random_forest_regressor', 'gradient_boosting', 'stacking_classifier',
-            'stacking_regressor'
-        ]
+        """Initialize the model trainer with supported models"""
+        # Dictionary of supported model types and their default configurations
+        self.supported_models = {
+            'linear_regression': {
+                'type': 'regression',
+                'model': 'sklearn.linear_model.LinearRegression',
+                'default_params': {}
+            },
+            'logistic_regression': {
+                'type': 'classification',
+                'model': 'sklearn.linear_model.LogisticRegression',
+                'default_params': {'max_iter': 1000, 'C': 1.0}
+            },
+            'random_forest': {
+                'type': 'classification',
+                'model': 'sklearn.ensemble.RandomForestClassifier',
+                'default_params': {'n_estimators': 100, 'max_depth': 10}
+            },
+            'random_forest_regressor': {
+                'type': 'regression',
+                'model': 'sklearn.ensemble.RandomForestRegressor',
+                'default_params': {'n_estimators': 100, 'max_depth': 10}
+            },
+            'svm': {
+                'type': 'classification',
+                'model': 'sklearn.svm.SVC',
+                'default_params': {'kernel': 'rbf', 'C': 1.0}
+            },
+            'gradient_boosting': {
+                'type': 'classification',
+                'model': 'sklearn.ensemble.GradientBoostingClassifier',
+                'default_params': {'n_estimators': 100, 'learning_rate': 0.1}
+            },
+            'gradient_boosting_regressor': {
+                'type': 'regression',
+                'model': 'sklearn.ensemble.GradientBoostingRegressor',
+                'default_params': {'n_estimators': 100, 'learning_rate': 0.1}
+            }
+        }
+        
+        # Storage directory for saved models
+        self.model_dir = os.path.join('storage', 'models')
+        os.makedirs(self.model_dir, exist_ok=True)
     
     def train(self, file_path, model_type, config):
         """
-        Train a machine learning model
+        Train a model on the provided dataset
         
         Parameters:
         -----------
         file_path : str
-            Path to the data file
+            Path to the dataset file
         model_type : str
             Type of model to train
         config : dict
-            Configuration for the model
+            Configuration for model training
             
         Returns:
         --------
         dict
-            Results of the training including metrics and trained model
+            Results of model training including metrics
         """
-        # Load data with proper encoding handling
+        logger.info(f"Starting model training for {model_type} on {file_path}")
+        
         try:
-            # Try UTF-8 first (most common)
-            df = pd.read_csv(file_path, encoding='utf-8')
-        except UnicodeDecodeError:
+            # Validate model type
+            if model_type not in self.supported_models:
+                raise ValueError(f"Unsupported model type: {model_type}. Supported types: {list(self.supported_models.keys())}")
+            
+            # Load dataset with robust error handling
             try:
-                # Try Latin-1 (very permissive encoding)
-                df = pd.read_csv(file_path, encoding='latin1')
-            except Exception as e:
-                # If still failing, try to detect encoding
-                import chardet
-                with open(file_path, 'rb') as f:
-                    result = chardet.detect(f.read())
+                # Determine file type from extension
+                file_ext = os.path.splitext(file_path)[1].lower()
                 
-                # Try with detected encoding
-                detected_encoding = result['encoding']
-                df = pd.read_csv(file_path, encoding=detected_encoding)
-        
-        target_column = config.get('target_column')
-        
-        if not target_column or target_column not in df.columns:
-            raise ValueError("A valid target column must be specified")
-        
-        # Get feature columns (either specified or all columns except target)
-        feature_columns = config.get('feature_columns')
-        if not feature_columns:
-            # Use all columns except target
-            feature_columns = [col for col in df.columns if col != target_column]
-        
-        # Make sure all specified feature columns exist in the dataframe
-        missing_cols = [col for col in feature_columns if col not in df.columns]
-        if missing_cols:
-            raise ValueError(f"Missing columns in dataset: {', '.join(missing_cols)}")
-        
-        # Split data into features and target
-        X = df[feature_columns]
-        y = df[target_column]
-        
-        # Split data into training and testing sets
-        test_size = config.get('test_size', 0.2)
-        random_state = config.get('random_state', 42)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
-        
-        # Get feature names and class names
-        feature_names = X.columns.tolist()
-        class_names = y.unique().tolist() if y.nunique() <= 10 else None
-        
-        # Train model based on type
-        if model_type == 'logistic_regression':
-            return self._train_logistic_regression(X_train, X_test, y_train, y_test, config, feature_names, class_names)
-        elif model_type == 'linear_regression':
-            return self._train_linear_regression(X_train, X_test, y_train, y_test, config, feature_names)
-        elif model_type == 'random_forest_classifier':
-            return self._train_random_forest_classifier(X_train, X_test, y_train, y_test, config, feature_names, class_names)
-        elif model_type == 'random_forest_regressor':
-            return self._train_random_forest_regressor(X_train, X_test, y_train, y_test, config, feature_names)
-        elif model_type == 'gradient_boosting':
-            return self._train_gradient_boosting(X_train, X_test, y_train, y_test, config, feature_names)
-        elif model_type == 'stacking_classifier':
-            return self._train_stacking_classifier(X_train, X_test, y_train, y_test, config, feature_names, class_names)
-        elif model_type == 'stacking_regressor':
-            return self._train_stacking_regressor(X_train, X_test, y_train, y_test, config, feature_names)
-        else:
-            raise ValueError(f"Unsupported model type: {model_type}. Supported types: {self.supported_models}")
+                # Use robust CSV loading with error handling
+                if file_ext == '.csv':
+                    # First try with standard options
+                    try:
+                        df = pd.read_csv(file_path)
+                    except pd.errors.ParserError as e:
+                        logger.warning(f"CSV parsing error: {str(e)}")
+                        logger.info("Trying with error handling options...")
+                        
+                        # Try to detect CSV dialect
+                        import csv
+                        with open(file_path, 'r', newline='', errors='replace') as f:
+                            sample = f.read(4096)
+                        try:
+                            dialect = csv.Sniffer().sniff(sample)
+                            logger.info(f"Detected CSV dialect: delimiter='{dialect.delimiter}', quotechar='{dialect.quotechar}'")
+                            
+                            # Try to read with detected dialect
+                            df = pd.read_csv(
+                                file_path,
+                                delimiter=dialect.delimiter,
+                                quotechar=dialect.quotechar,
+                                error_bad_lines=False,
+                                warn_bad_lines=True,
+                                on_bad_lines='skip'  # For pandas >= 1.3
+                            )
+                        except:
+                            # Fallback to most permissive options
+                            logger.warning("Dialect detection failed, using fallback options")
+                            df = pd.read_csv(
+                                file_path,
+                                error_bad_lines=False,
+                                warn_bad_lines=True,
+                                on_bad_lines='skip',
+                                low_memory=False
+                            )
+                elif file_ext in ['.xlsx', '.xls']:
+                    df = pd.read_excel(file_path)
+                elif file_ext == '.json':
+                    df = pd.read_json(file_path)
+                else:
+                    raise ValueError(f"Unsupported file type: {file_ext}")
+                
+                logger.info(f"Successfully loaded dataset with shape {df.shape}")
+            except Exception as e:
+                logger.error(f"Error loading dataset: {str(e)}")
+                raise
+            
+            # Extract configuration parameters
+            target_column = config.get('target_column')
+            if not target_column:
+                raise ValueError("Target column must be specified in configuration")
+                
+            # Validate target column exists
+            if target_column not in df.columns:
+                raise ValueError(f"Target column '{target_column}' not found in dataset. Available columns: {list(df.columns)}")
+            
+            # Get feature columns (all except target)
+            ignore_columns = config.get('ignore_columns', [])
+            feature_columns = [col for col in df.columns if col != target_column and col not in ignore_columns]
+            
+            if not feature_columns:
+                raise ValueError("No feature columns available for training")
+            
+            # Extract features and target
+            X = df[feature_columns]
+            y = df[target_column]
+            
+            # Log data info
+            logger.info(f"Feature columns: {feature_columns}")
+            logger.info(f"Target column: {target_column}")
+            logger.info(f"Features shape: {X.shape}")
+            logger.info(f"Target shape: {y.shape}")
+            
+            # Check for nulls in target column
+            if y.isnull().any():
+                logger.warning(f"Target column contains {y.isnull().sum()} null values")
+                logger.info("Removing rows with null target values")
+                non_null_indices = y.notnull()
+                X = X[non_null_indices]
+                y = y[non_null_indices]
+            
+            # Identify numeric and categorical columns for preprocessing
+            numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
+            categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
+            
+            logger.info(f"Numeric columns: {numeric_cols}")
+            logger.info(f"Categorical columns: {categorical_cols}")
+            
+            # Create preprocessing pipeline
+            preprocessor = self._create_preprocessor(numeric_cols, categorical_cols)
+            
+            # Split data into train/test sets
+            test_size = float(config.get('test_size', 0.2))
+            random_state = int(config.get('random_state', 42))
+            
+            try:
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=test_size, random_state=random_state
+                )
+                logger.info(f"Data split: train={X_train.shape}, test={X_test.shape}")
+            except Exception as e:
+                logger.error(f"Error splitting data: {str(e)}")
+                raise
+            
+            # Get model class from string
+            model_info = self.supported_models[model_type]
+            model_path = model_info['model'].split('.')
+            model_module = __import__('.'.join(model_path[:-1]), fromlist=[model_path[-1]])
+            ModelClass = getattr(model_module, model_path[-1])
+            
+            # Merge default params with user-provided params
+            default_params = model_info['default_params'].copy()
+            user_params = config.get('model_params', {})
+            model_params = {**default_params, **user_params}
+            
+            # Log model parameters
+            logger.info(f"Training {model_type} with parameters: {model_params}")
+            
+            # Create and train model pipeline
+            model = Pipeline([
+                ('preprocessor', preprocessor),
+                ('model', ModelClass(**model_params))
+            ])
+            
+            # Train the model with more robust error handling
+            try:
+                model.fit(X_train, y_train)
+                logger.info("Model training completed successfully")
+            except Exception as e:
+                logger.error(f"Error during model training: {str(e)}")
+                
+                # Try to diagnose what went wrong
+                if "could not convert string to float" in str(e):
+                    # Check for non-numeric data in columns expected to be numeric
+                    for col in numeric_cols:
+                        if pd.api.types.is_object_dtype(X[col]):
+                            sample_values = X[col].dropna().head().tolist()
+                            logger.error(f"Column '{col}' contains non-numeric values: {sample_values}")
+                
+                # Check for categorical columns with many unique values
+                for col in categorical_cols:
+                    n_unique = X[col].nunique()
+                    if n_unique > 100:
+                        logger.warning(f"Column '{col}' has {n_unique} unique values, which may cause issues for one-hot encoding")
+                
+                # Add more diagnostics as needed
+                raise
+            
+            # Evaluate on test set
+            y_pred = model.predict(X_test)
+            
+            # Calculate appropriate metrics based on problem type
+            metrics = {}
+            if model_info['type'] == 'classification':
+                # Check if binary or multiclass
+                if len(np.unique(y)) <= 2:
+                    # Binary classification
+                    metrics = {
+                        'accuracy': float(accuracy_score(y_test, y_pred)),
+                        'precision': float(precision_score(y_test, y_pred, zero_division=0)),
+                        'recall': float(recall_score(y_test, y_pred, zero_division=0)),
+                        'f1': float(f1_score(y_test, y_pred, zero_division=0))
+                    }
+                else:
+                    # Multiclass - use macro averaging
+                    metrics = {
+                        'accuracy': float(accuracy_score(y_test, y_pred)),
+                        'precision_macro': float(precision_score(y_test, y_pred, average='macro', zero_division=0)),
+                        'recall_macro': float(recall_score(y_test, y_pred, average='macro', zero_division=0)),
+                        'f1_macro': float(f1_score(y_test, y_pred, average='macro', zero_division=0))
+                    }
+            else:  # regression
+                metrics = {
+                    'mse': float(mean_squared_error(y_test, y_pred)),
+                    'rmse': float(np.sqrt(mean_squared_error(y_test, y_pred))),
+                    'r2': float(r2_score(y_test, y_pred))
+                }
+            
+            logger.info(f"Model evaluation metrics: {metrics}")
+            
+            # Save model
+            model_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            model_path = os.path.join(self.model_dir, f"{model_type}_{model_id}.pkl")
+            
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
+            
+            # Create and return results
+            result = {
+                'success': True,
+                'model_id': model_id,
+                'model_type': model_type,
+                'metrics': metrics,
+                'feature_columns': feature_columns,
+                'target_column': target_column,
+                'model_path': model_path,
+                'training_config': config
+            }
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in model training: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'model_type': model_type
+            }
     
-    def _train_logistic_regression(self, X_train, X_test, y_train, y_test, config, feature_names, class_names):
-        """Train a logistic regression model"""
-        model = LogisticRegression()
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test) if hasattr(model, 'predict_proba') else None
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, y_prob, 'classification')
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': None
-        }
-    
-    def _train_linear_regression(self, X_train, X_test, y_train, y_test, config, feature_names):
-        """Train a linear regression model"""
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, None, 'regression')
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': None
-        }
-    
-    def _train_random_forest_classifier(self, X_train, X_test, y_train, y_test, config, feature_names, class_names):
-        """Train a random forest classifier"""
-        n_estimators = config.get('n_estimators', 100)
-        model = RandomForestClassifier(n_estimators=n_estimators)
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test) if hasattr(model, 'predict_proba') else None
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, y_prob, 'classification')
-        
-        # Get feature importance
-        feature_importance = dict(zip(feature_names, model.feature_importances_))
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': feature_importance
-        }
-    
-    def _train_random_forest_regressor(self, X_train, X_test, y_train, y_test, config, feature_names):
-        """Train a random forest regressor"""
-        n_estimators = config.get('n_estimators', 100)
-        model = RandomForestRegressor(n_estimators=n_estimators)
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, None, 'regression')
-        
-        # Get feature importance
-        feature_importance = dict(zip(feature_names, model.feature_importances_))
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': feature_importance
-        }
-    
-    def _train_gradient_boosting(self, X_train, X_test, y_train, y_test, config, feature_names):
-        """Train a gradient boosting regressor"""
-        n_estimators = config.get('n_estimators', 100)
-        model = GradientBoostingRegressor(n_estimators=n_estimators)
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, None, 'regression')
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': None
-        }
-    
-    def _train_stacking_classifier(self, X_train, X_test, y_train, y_test, config, feature_names, class_names):
-        """Train a stacking ensemble of classifiers"""
-        # Get ensemble configuration
-        ensemble_config = config.get('ensemble_config', {})
-        estimators = ensemble_config.get('estimators', [
-            ('lr', LogisticRegression()),
-            ('rf', RandomForestClassifier(n_estimators=100)),
-            ('svm', SVC(probability=True))
-        ])
-        final_estimator = ensemble_config.get('final_estimator', LogisticRegression())
-        cv = ensemble_config.get('cv', 5)
-        
-        # Create and train stacking classifier
-        model = StackingClassifier(
-            estimators=estimators,
-            final_estimator=final_estimator,
-            cv=cv
-        )
-        
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test) if hasattr(model, 'predict_proba') else None
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, y_prob, 'classification')
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': None
-        }
-    
-    def _train_stacking_regressor(self, X_train, X_test, y_train, y_test, config, feature_names):
-        """Train a stacking ensemble of regressors"""
-        # Get ensemble configuration
-        ensemble_config = config.get('ensemble_config', {})
-        estimators = ensemble_config.get('estimators', [
-            ('lr', LinearRegression()),
-            ('rf', RandomForestRegressor(n_estimators=100)),
-            ('gbr', GradientBoostingRegressor())
-        ])
-        final_estimator = ensemble_config.get('final_estimator', LinearRegression())
-        cv = ensemble_config.get('cv', 5)
-        
-        # Create and train stacking regressor
-        model = StackingRegressor(
-            estimators=estimators,
-            final_estimator=final_estimator,
-            cv=cv
-        )
-        
-        model.fit(X_train, y_train)
-        
-        # Make predictions
-        y_pred = model.predict(X_test)
-        
-        # Calculate metrics
-        metrics = self._calculate_metrics(y_test, y_pred, None, 'regression')
-        
-        return {
-            'model': model,
-            'metrics': metrics,
-            'feature_importance': None
-        }
-    
-    def _calculate_metrics(self, y_true, y_pred, y_prob, task_type):
+    def _create_preprocessor(self, numeric_cols, categorical_cols):
         """
-        Calculate evaluation metrics
+        Create a column transformer for preprocessing data
         
         Parameters:
         -----------
-        y_true : array-like
-            True target values
-        y_pred : array-like
-            Predicted target values
-        y_prob : array-like, optional
-            Predicted probabilities (for classification)
-        task_type : str
-            Type of task ('classification' or 'regression')
+        numeric_cols : list
+            List of numeric column names
+        categorical_cols : list
+            List of categorical column names
             
         Returns:
         --------
-        dict
-            Calculated metrics
+        ColumnTransformer
+            Preprocessor for the data
         """
-        if task_type == 'classification':
-            metrics = {
-                'accuracy': accuracy_score(y_true, y_pred),
-                'precision': precision_score(y_true, y_pred, average='weighted'),
-                'recall': recall_score(y_true, y_pred, average='weighted'),
-                'f1_score': f1_score(y_true, y_pred, average='weighted')
-            }
-            if y_prob is not None:
-                metrics['roc_auc'] = None  # Add ROC AUC calculation if needed
-        elif task_type == 'regression':
-            metrics = {
-                'mse': mean_squared_error(y_true, y_pred),
-                'r2_score': r2_score(y_true, y_pred)
-            }
-        else:
-            raise ValueError(f"Unknown task type: {task_type}")
+        # For numeric columns: impute missing values and scale
+        numeric_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler())
+        ])
         
-        return metrics
+        # For categorical columns: impute missing values and one-hot encode
+        # Only use OneHotEncoder if there are categorical columns
+        if categorical_cols:
+            categorical_transformer = Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='most_frequent')),
+                ('onehot', OneHotEncoder(handle_unknown='ignore'))
+            ])
+            
+            # Create column transformer with both numeric and categorical pipelines
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ('num', numeric_transformer, numeric_cols),
+                    ('cat', categorical_transformer, categorical_cols)
+                ]
+            )
+        else:
+            # If no categorical columns, only use numeric pipeline
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ('num', numeric_transformer, numeric_cols)
+                ]
+            )
+        
+        return preprocessor
+    
+    def load_model(self, model_path):
+        """
+        Load a trained model from file
+        
+        Parameters:
+        -----------
+        model_path : str
+            Path to the saved model file
+            
+        Returns:
+        --------
+        object
+            Loaded model
+        """
+        try:
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+            return model
+        except Exception as e:
+            logger.error(f"Error loading model: {str(e)}")
+            raise
+    
+    def predict(self, model_path, data):
+        """
+        Make predictions with a trained model
+        
+        Parameters:
+        -----------
+        model_path : str
+            Path to the saved model file
+        data : pandas.DataFrame
+            Data to make predictions on
+            
+        Returns:
+        --------
+        array
+            Predictions
+        """
+        try:
+            model = self.load_model(model_path)
+            return model.predict(data)
+        except Exception as e:
+            logger.error(f"Error making predictions: {str(e)}")
+            raise
