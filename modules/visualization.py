@@ -87,21 +87,32 @@ class Visualizer:
         
         # Load data based on file extension
         file_ext = os.path.splitext(file_path)[1].lower()
-        if file_ext == '.csv':
-            df = pd.read_csv(file_path)
-        elif file_ext in ['.xls', '.xlsx']:
-            df = pd.read_excel(file_path)
-        elif file_ext == '.json':
-            df = pd.read_json(file_path)
-        else:
-            raise ValueError(f"Unsupported file type: {file_ext}")
-        
-        # Print dataframe info for debugging
-        print(f"DataFrame shape: {df.shape}")
-        print(f"DataFrame columns: {df.columns.tolist()}")
-        print(f"DataFrame data types:\n{df.dtypes}")
-        
         try:
+            if file_ext == '.csv':
+                df = pd.read_csv(file_path)
+            elif file_ext in ['.xls', '.xlsx']:
+                df = pd.read_excel(file_path)
+            elif file_ext == '.json':
+                df = pd.read_json(file_path)
+            else:
+                raise ValueError(f"Unsupported file type: {file_ext}")
+            
+            # Print dataframe info for debugging
+            print(f"DataFrame shape: {df.shape}")
+            print(f"DataFrame columns: {df.columns.tolist()}")
+            print(f"DataFrame data types:\n{df.dtypes}")
+            
+            # Auto-convert numeric columns stored as strings
+            for col in df.columns:
+                if df[col].dtype == 'object':
+                    try:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                        mask = df[col].notna()
+                        if mask.sum() > 0 and mask.sum() / len(df) > 0.5:  # Only convert if >50% converted successfully
+                            print(f"Converted column '{col}' to numeric type")
+                    except:
+                        pass
+        
             # Create visualization based on type
             if viz_type in self.basic_viz_types:
                 fig = self.create_basic_viz(df, viz_type, params)
@@ -128,7 +139,20 @@ class Visualizer:
                 }
             
             # Check if the data array contains actual traces with data
-            if not fig_dict['data'] or all(not trace.get('x') for trace in fig_dict['data']):
+            has_data = False
+            for trace in fig_dict['data']:
+                if trace.get('type') == 'pie' and trace.get('values') and len(trace.get('values')) > 0:
+                    has_data = True
+                    break
+                elif trace.get('type') in ('heatmap', 'contour') and trace.get('z') and len(trace.get('z')) > 0:
+                    has_data = True
+                    break
+                elif ((trace.get('x') and len(trace.get('x')) > 0) or 
+                      (trace.get('y') and len(trace.get('y')) > 0)):
+                    has_data = True
+                    break
+            
+            if not has_data:
                 print("Warning: Plotly figure has no data traces")
                 # Add a warning annotation to the plot
                 if 'annotations' not in fig_dict['layout']:
@@ -181,7 +205,8 @@ class Visualizer:
             plot_json = json.dumps(fig_dict, cls=PlotlyJSONEncoder)
             
             return {
-                'success': True,
+                'success': False,
+                'error': str(e),
                 'plot': plot_json,
                 'type': viz_type,
                 'title': f"Error: {viz_type.replace('_', ' ').title()} Visualization"
@@ -231,7 +256,7 @@ class Visualizer:
         x = params.get('x')
         y = params.get('y')
         color = params.get('color')
-        title = params.get('title', f"{viz_type.replace('_', ' ').title()} Chart")
+        title = params.get('title', f"{{viz_type.replace('_', ' ').title()}} Chart")
         use_index = params.get('use_index', False)
         
         # Check if dataframe is empty
@@ -334,8 +359,39 @@ class Visualizer:
         print(f"Sample data for visualization:\n{plot_df.head(3)}")
         
         try:
-            # Direct method for histograms - make more robust
-            if viz_type == 'histogram':
+            # SCATTER PLOT
+            if viz_type == 'scatter':
+                if x and y:
+                    fig = px.scatter(plot_df, x=x, y=y, color=color, title=title)
+                else:
+                    raise ValueError("Scatter plot requires both X and Y columns (or enable use_index option)")
+                
+            # LINE CHART
+            elif viz_type == 'line':
+                if x and y:
+                    fig = px.line(plot_df, x=x, y=y, color=color, title=title)
+                else:
+                    raise ValueError("Line chart requires both X and Y columns (or enable use_index option)")
+                
+            # BAR CHART
+            elif viz_type == 'bar':
+                if x and y:
+                    # Check if x column is categorical or numeric
+                    is_x_categorical = not pd.api.types.is_numeric_dtype(plot_df[x]) or plot_df[x].nunique() < 20
+                    
+                    if is_x_categorical:
+                        # Standard bar chart for categorical data
+                        fig = px.bar(plot_df, x=x, y=y, color=color, title=title)
+                    else:
+                        # For numeric x-values, create a histogram-like bar chart
+                        # Group by x value first
+                        grouped = plot_df.groupby(x)[y].sum().reset_index()
+                        fig = px.bar(grouped, x=x, y=y, title=title)
+                else:
+                    raise ValueError("Bar chart requires both X (categories) and Y (values) columns")
+                    
+            # HISTOGRAM
+            elif viz_type == 'histogram':
                 # Check that we have a valid column for histogram
                 if not x and not y:
                     raise ValueError("Histogram requires at least one column selection (X or Y)")
@@ -377,9 +433,117 @@ class Visualizer:
                         bargap=0.1
                     )
                 
-                return fig
+            # BOX PLOT
+            elif viz_type == 'box':
+                if y:  # Box plot requires y axis (values)
+                    # Use a more direct approach for box plots to ensure compatibility
+                    if pd.api.types.is_numeric_dtype(plot_df[y]):
+                        # Create box plot with optional grouping by x
+                        if x and x in plot_df.columns:
+                            # Group by x-axis column (categorical)
+                            fig = go.Figure()
+                            
+                            # Calculate box plot stats for each group
+                            groups = plot_df.groupby(x)[y].apply(list).to_dict()
+                            
+                            for group_name, values in groups.items():
+                                fig.add_trace(go.Box(
+                                    y=values,
+                                    name=str(group_name),
+                                    boxpoints='all',  # show all points
+                                    jitter=0.3,
+                                    pointpos=-1.8
+                                ))
+                                
+                            fig.update_layout(
+                                title=title,
+                                yaxis_title=y,
+                                xaxis_title=x,
+                                boxmode='group'
+                            )
+                        else:
+                            # Simple box plot without grouping
+                            fig = go.Figure()
+                            fig.add_trace(go.Box(
+                                y=plot_df[y].dropna().tolist(),
+                                name=y,
+                                boxpoints='all',  # show all points
+                                jitter=0.3,
+                                pointpos=-1.8
+                            ))
+                            fig.update_layout(
+                                title=title,
+                                yaxis_title=y
+                            )
+                    else:
+                        raise ValueError(f"Column '{y}' must be numeric for box plot")
+                else:
+                    raise ValueError("Box plot requires Y column (values to analyze)")
+                    
+            # PIE CHART
+            elif viz_type == 'pie':
+                if x and y:  # Pie chart needs categories and values
+                    # Print detailed info for debugging pie charts
+                    print(f"Creating pie chart with x={x}, y={y}")
+                    print(f"X column '{x}' exists in df: {x in df.columns}")
+                    print(f"Y column '{y}' exists in df: {y in df.columns}")
+                    
+                    # Check that y column is numeric
+                    if not pd.api.types.is_numeric_dtype(plot_df[y]):
+                        # Try to convert to numeric one more time
+                        try:
+                            plot_df[y] = pd.to_numeric(plot_df[y], errors='coerce')
+                            if plot_df[y].isna().sum() > 0.5 * len(plot_df):
+                                raise ValueError(f"Values column {y} could not be converted to numeric type")
+                            print(f"Successfully converted {y} to numeric for pie chart")
+                        except Exception as e:
+                            raise ValueError(f"Values column {y} must be numeric for pie chart: {str(e)}")
+                        
+                    # Aggregate data to handle potential duplicates in categories
+                    print(f"Aggregating data for pie chart...")
+                    pie_data = plot_df.groupby(x)[y].sum().reset_index()
+                    print(f"Aggregated data shape: {pie_data.shape}")
+                    
+                    # Remove any negative values (which cause errors in pie charts)
+                    if (pie_data[y] < 0).any():
+                        print("Warning: Removing negative values from pie chart data")
+                        pie_data = pie_data[pie_data[y] >= 0]
+                    
+                    # Check if any data remains
+                    if len(pie_data) == 0:
+                        raise ValueError("No valid data points for pie chart after filtering")
+                    
+                    # Make sure values are not all zeros
+                    if (pie_data[y] == 0).all():
+                        raise ValueError("All values are zero, cannot create pie chart")
+                    
+                    # Print the data for debugging
+                    print(f"Pie chart data (first 5 rows):\n{pie_data.head()}")
+                    
+                    # Create the pie chart
+                    fig = px.pie(
+                        pie_data, 
+                        names=x, 
+                        values=y, 
+                        title=title,
+                        labels={x: "Categories", y: "Values"}
+                    )
+                    fig.update_traces(textposition='inside', textinfo='percent+label')
+                    
+                    # Check if the figure has data
+                    if 'data' not in fig.to_dict() or len(fig.to_dict()['data']) == 0:
+                        raise ValueError("Plotly failed to generate a valid pie chart")
+                    
+                    return fig
+                else:
+                    raise ValueError("Pie chart requires both X (categories) and Y (numeric values) columns")
             
-            # ...existing code for other visualization types...
+            else:
+                # For any other type not specifically handled, try to use plotly express
+                fig = px.scatter(plot_df, x=x, y=y, color=color, title=title)
+                
+            return fig
+            
         except Exception as e:
             # Create a fallback error figure
             print(f"Error creating {viz_type} plot with direct method: {e}")
@@ -398,82 +562,463 @@ class Visualizer:
                 xaxis=dict(visible=False),
                 yaxis=dict(visible=False)
             )
-        
-        # Debug the created figure to ensure it has data
-        fig_dict = fig.to_dict()
-        print(f"Figure data trace count: {len(fig_dict.get('data', []))}")
-        for i, trace in enumerate(fig_dict.get('data', [])):
-            x_data = trace.get('x', [])
-            y_data = trace.get('y', [])
-            trace_type = trace.get('type', 'unknown')
-            print(f"Trace {i}: Type={trace_type}, X points={len(x_data) if x_data else 'None'}, Y points={len(y_data) if y_data else 'None'}")
-            
-            # Special handling for traces that may not have x/y (like pie charts)
-            if trace_type == 'pie':
-                values = trace.get('values', [])
-                labels = trace.get('labels', [])
-                print(f"  Pie chart: Values={len(values) if values else 'None'}, Labels={len(labels) if labels else 'None'}")
-        
-        return fig
+            return fig
     
     def create_advanced_viz(self, df, viz_type, params):
         """Create advanced visualizations"""
         x = params.get('x')
         y = params.get('y')
-        z = params.get('z')
         color = params.get('color')
         title = params.get('title', f"{viz_type.replace('_', ' ').title()} Chart")
         
-        # Special preprocessing for visualizations with specific requirements
-        if viz_type in ['parallel_coordinates', 'scatter_matrix']:
-            # These visualizations need uniform column types
-            dimensions = params.get('dimensions')
-            if dimensions:
-                df = self._preprocess_dataframe(df, columns=dimensions)
-            else:
-                # Default to first 5 numeric columns if none specified
-                numeric_df = df.select_dtypes(include=['number'])
-                if len(numeric_df.columns) >= 2:
-                    df = numeric_df.iloc[:, :min(5, len(numeric_df.columns))]
-                else:
-                    raise ValueError(f"Insufficient numeric columns for {viz_type}")
+        # Check if dataframe is empty
+        if df.empty:
+            raise ValueError("Dataset is empty - cannot create visualization")
+            
+        # Create a copy of the DataFrame for visualization
+        plot_df = df.copy()
         
-        # Now continue with existing code for creating the visualization
-        if viz_type == 'violin':
-            fig = px.violin(df, x=x, y=y, color=color, box=True, title=title)
-        elif viz_type == 'heatmap':
-            # For heatmap, we need a pivot table or correlation matrix
-            if params.get('corr', False):
-                # Ensure numeric columns for correlation
-                corr_df = df.select_dtypes(include=['number'])
-                specified_columns = params.get('columns')
-                if specified_columns:
-                    # Filter to only numeric columns from the specified list
-                    cols = [col for col in specified_columns if col in corr_df.columns]
-                    if len(cols) < 2:
-                        raise ValueError("Insufficient numeric columns for correlation heatmap")
-                    corr_df = corr_df[cols]
-                corr_matrix = corr_df.corr()
-                fig = px.imshow(corr_matrix, title=title)
-            else:
-                pivot_index = params.get('pivot_index')
-                pivot_columns = params.get('pivot_columns')
-                pivot_values = params.get('pivot_values')
-                
-                if not (pivot_index and pivot_columns and pivot_values):
-                    raise ValueError("Pivot table requires index, columns, and values parameters")
+        # Convert DataFrame data to appropriate types
+        for col in plot_df.columns:
+            if col in [x, y] and pd.api.types.is_object_dtype(plot_df[col]):
+                try:
+                    plot_df[col] = pd.to_numeric(plot_df[col], errors='coerce')
+                    print(f"Converted column '{col}' to numeric type")
+                except:
+                    print(f"Could not convert column '{col}' to numeric type")
+        
+        # Validate column existence
+        if x and x not in df.columns:
+            raise ValueError(f"Column '{x}' not found in dataset")
+        if y and y not in df.columns:
+            raise ValueError(f"Column '{y}' not found in dataset")
+        
+        # Add validation for color column
+        if color and color not in df.columns:
+            print(f"Warning: Color column '{color}' not found in dataset. Ignoring color parameter.")
+            color = None
+        
+        # Drop rows where the key columns have NaN values
+        if x:
+            plot_df = plot_df.dropna(subset=[x])
+        if y:
+            plot_df = plot_df.dropna(subset=[y])
+        
+        # Ensure there's still data after dropping NaN values
+        if plot_df.empty:
+            raise ValueError("No valid data points after removing NaN values from selected columns")
+        
+        try:
+            # VIOLIN PLOT
+            if viz_type == 'violin':
+                if y:  # Violin plot requires y-axis values
+                    if not pd.api.types.is_numeric_dtype(plot_df[y]):
+                        raise ValueError(f"Column '{y}' must be numeric for violin plot")
+                        
+                    fig = go.Figure()
                     
-                # Create pivot table
-                pivot_data = df.pivot_table(
-                    index=pivot_index, 
-                    columns=pivot_columns, 
-                    values=pivot_values,
-                    aggfunc='mean'  # Use mean as default aggregation
-                )
-                fig = px.imshow(pivot_data, title=title)
-        # ...existing code for other visualizations...
-        
-        return fig
+                    if x:  # If x is provided, group by x
+                        # Group data by x column
+                        groups = plot_df.groupby(x)[y].apply(list).to_dict()
+                        
+                        for group_name, values in groups.items():
+                            fig.add_trace(go.Violin(
+                                y=values,
+                                name=str(group_name),
+                                box_visible=True,
+                                meanline_visible=True,
+                                points="all"
+                            ))
+                        
+                        fig.update_layout(
+                            title=title,
+                            yaxis_title=y,
+                            xaxis_title=x,
+                            violinmode='group'
+                        )
+                    else:  # Simple violin plot for just the y column
+                        fig = go.Figure()
+                        fig.add_trace(go.Violin(
+                            y=plot_df[y].dropna().tolist(),
+                            name=y,
+                            box_visible=True,
+                            meanline_visible=True,
+                            points="all"
+                        ))
+                        fig.update_layout(
+                            title=title,
+                            yaxis_title=y
+                        )
+                else:
+                    raise ValueError("Violin plot requires a Y column (values to analyze)")
+                    
+            # HEATMAP
+            elif viz_type == 'heatmap':
+                if x and y:
+                    # Get the value to use for the heatmap cells
+                    z_col = params.get('z')  # Optional third variable for cell values
+                    
+                    print(f"Creating heatmap with x={x}, y={y}, z={z_col}")
+                    print(f"Data types: x={plot_df[x].dtype}, y={plot_df[y].dtype}")
+                    
+                    # Ensure x and y are converted to string to avoid issues with numeric indices
+                    plot_df[x] = plot_df[x].astype(str)
+                    plot_df[y] = plot_df[y].astype(str)
+                    
+                    try:
+                        if z_col and z_col in plot_df.columns:
+                            print(f"Using z-values from column: {z_col}, dtype={plot_df[z_col].dtype}")
+                            
+                            # Ensure z-column is numeric
+                            if not pd.api.types.is_numeric_dtype(plot_df[z_col]):
+                                try:
+                                    plot_df[z_col] = pd.to_numeric(plot_df[z_col], errors='coerce')
+                                    print(f"Converted z column '{z_col}' to numeric")
+                                except:
+                                    raise ValueError(f"Z-value column '{z_col}' must be numeric for heatmap")
+                            
+                            # Pivot data to create heatmap with z as values
+                            print(f"Creating pivot table with y={y} as index, x={x} as columns, z={z_col} as values")
+                            pivot_df = plot_df.pivot_table(
+                                values=z_col, 
+                                index=y, 
+                                columns=x, 
+                                aggfunc='mean',
+                                fill_value=0  # Fill NaN with zeros
+                            )
+                            
+                            print(f"Pivot table shape: {pivot_df.shape}")
+                            print(f"Pivot table index (first 5): {pivot_df.index[:5].tolist()}")
+                            print(f"Pivot table columns (first 5): {pivot_df.columns[:5].tolist()}")
+                            
+                            # Check that pivot table is not empty
+                            if pivot_df.empty:
+                                raise ValueError("Pivot table is empty - cannot create heatmap")
+                            
+                        else:
+                            print(f"Creating count-based heatmap for x={x} and y={y}")
+                            
+                            # Use the more robust crosstab method
+                            print("Using pd.crosstab for count-based heatmap")
+                            pivot_df = pd.crosstab(
+                                plot_df[y], 
+                                plot_df[x],
+                                dropna=False
+                            ).fillna(0)
+                            
+                            print(f"Crosstab shape: {pivot_df.shape}")
+                            print(f"Crosstab index (first 5): {pivot_df.index[:5].tolist()}")
+                            print(f"Crosstab columns (first 5): {pivot_df.columns[:5].tolist()}")
+                            
+                            if pivot_df.empty:
+                                raise ValueError("Crosstab is empty - cannot create heatmap")
+                        
+                        # Convert to lists with explicit type conversion for z, x, and y values
+                        z_values = pivot_df.values.tolist()
+                        x_values = [str(val) for val in pivot_df.columns.tolist()]
+                        y_values = [str(val) for val in pivot_df.index.tolist()]
+                        
+                        print(f"Heatmap data shapes: z={len(z_values)}x{len(z_values[0]) if z_values else 0}, x={len(x_values)}, y={len(y_values)}")
+                        
+                        # Create heatmap with more robust data
+                        fig = go.Figure(data=go.Heatmap(
+                            z=z_values,
+                            x=x_values,
+                            y=y_values,
+                            colorscale=params.get('colorscale', 'Viridis'),
+                            hoverongaps=False
+                        ))
+                        
+                        # Enhance layout for better display
+                        fig.update_layout(
+                            title=title,
+                            xaxis_title=x,
+                            yaxis_title=y,
+                            xaxis={'type': 'category'},  # Force categorical axes
+                            yaxis={'type': 'category'},
+                            margin={'l': 50, 'r': 50, 'b': 50, 't': 80}
+                        )
+                        
+                        # Verify the structure before returning
+                        fig_dict = fig.to_dict()
+                        if not fig_dict.get('data') or not isinstance(fig_dict['data'], list) or len(fig_dict['data']) == 0:
+                            raise ValueError("Generated heatmap has invalid structure")
+                        
+                        if not isinstance(fig_dict['data'][0].get('z', []), list):
+                            raise ValueError("Generated heatmap doesn't have a valid 2D z array")
+                        
+                        return fig
+                        
+                    except Exception as e:
+                        print(f"Error in heatmap creation: {str(e)}")
+                        
+                        # Create a fallback visualization with an error message
+                        fig = go.Figure()
+                        fig.add_annotation(
+                            text=f"Error creating heatmap: {str(e)}",
+                            xref="paper", yref="paper",
+                            x=0.5, y=0.5, showarrow=False,
+                            font=dict(size=14, color="red")
+                        )
+                        
+                        # Try to add a simple table as a fallback
+                        try:
+                            # Show raw data sample if we can't create heatmap
+                            sample_data = plot_df[[x, y]].head(10).to_dict('records')
+                            sample_text = "\n".join([f"{row[x]} - {row[y]}" for row in sample_data])
+                            
+                            fig.add_annotation(
+                                text=f"Sample data (first 10 rows):<br>{sample_text}",
+                                xref="paper", yref="paper",
+                                x=0.5, y=0.3, showarrow=False,
+                                font=dict(size=10)
+                            )
+                        except:
+                            pass
+                        
+                        fig.update_layout(
+                            title=f"Error in {viz_type} visualization",
+                            xaxis=dict(visible=False),
+                            yaxis=dict(visible=False)
+                        )
+                        
+                        return fig
+                else:
+                    raise ValueError("Heatmap requires both X and Y columns")
+            
+            # CONTOUR PLOT
+            elif viz_type == 'contour':
+                if x and y:
+                    # Get the value to use for the contour z values
+                    z_col = params.get('z')
+                    
+                    print(f"Creating contour plot with x={x}, y={y}, z={z_col}")
+                    
+                    # For contour plots, x and y must be numeric
+                    for col, label in [(x, 'X'), (y, 'Y')]:
+                        if not pd.api.types.is_numeric_dtype(plot_df[col]):
+                            try:
+                                plot_df[col] = pd.to_numeric(plot_df[col], errors='coerce')
+                                print(f"Converted {label} column '{col}' to numeric for contour plot")
+                            except:
+                                raise ValueError(f"{label} column '{col}' must be numeric for contour plot")
+                    
+                    # Filter out NaN values
+                    plot_df = plot_df.dropna(subset=[x, y])
+                    
+                    if len(plot_df) < 10:
+                        raise ValueError("Not enough valid data points for contour plot after filtering")
+                    
+                    # Use direct Graph Objects approach for more control
+                    fig = go.Figure()
+                    
+                    # Different types of contour plots based on whether z is provided
+                    if z_col and z_col in plot_df.columns:
+                        # Make sure z column is numeric
+                        if not pd.api.types.is_numeric_dtype(plot_df[z_col]):
+                            try:
+                                plot_df[z_col] = pd.to_numeric(plot_df[z_col], errors='coerce')
+                                print(f"Converted Z column '{z_col}' to numeric for contour plot")
+                            except:
+                                raise ValueError(f"Z column '{z_col}' must be numeric for contour plot")
+                        
+                        # Remove NaN in z column
+                        plot_df = plot_df.dropna(subset=[z_col])
+                        
+                        if len(plot_df) < 10:
+                            raise ValueError("Not enough valid data points with Z values for contour plot")
+                        
+                        # Use griddata to interpolate scattered points to a regular grid
+                        try:
+                            from scipy.interpolate import griddata
+                            
+                            # Create a regular grid
+                            x_arr = plot_df[x].values
+                            y_arr = plot_df[y].values
+                            z_arr = plot_df[z_col].values
+                            
+                            # Create grid for interpolation
+                            x_min, x_max = x_arr.min(), x_arr.max()
+                            y_min, y_max = y_arr.min(), y_arr.max()
+                            x_grid = np.linspace(x_min, x_max, 100)
+                            y_grid = np.linspace(y_min, y_max, 100)
+                            X, Y = np.meshgrid(x_grid, y_grid)
+                            
+                            # Interpolate Z values on the grid
+                            Z = griddata((x_arr, y_arr), z_arr, (X, Y), method='cubic', fill_value=np.nan)
+                            
+                            # Add contour trace with gridded data
+                            fig.add_trace(go.Contour(
+                                z=Z,
+                                x=x_grid,
+                                y=y_grid,
+                                colorscale=params.get('colorscale', 'Viridis'),
+                                contours=dict(
+                                    showlabels=True,
+                                    labelfont=dict(
+                                        family='Raleway',
+                                        size=12,
+                                        color='white'
+                                    )
+                                ),
+                                colorbar=dict(
+                                    title=z_col,
+                                    titleside='right'
+                                )
+                            ))
+                        except Exception as interp_error:
+                            print(f"Interpolation error: {str(interp_error)}, falling back to Plotly Express")
+                            # Fallback to Plotly Express method - FIX PARAMETER NAME HERE
+                            fig = px.density_contour(
+                                plot_df,
+                                x=x,
+                                y=y,
+                                z=z_col,
+                                color_continuous_scale=params.get('colorscale', 'Viridis')
+                            )
+                    else:
+                        # Create a density contour plot (no z required)
+                        print("Creating density contour plot based on point density")
+                        
+                        # Add scatter points to show data
+                        fig.add_trace(go.Scatter(
+                            x=plot_df[x],
+                            y=plot_df[y],
+                            mode='markers',
+                            marker=dict(
+                                size=5,
+                                opacity=0.5,
+                                color='rgba(100,100,100,0.5)'
+                            ),
+                            name='Data Points'
+                        ))
+                        
+                        # Add the contour trace
+                        fig.add_trace(go.Histogram2dContour(
+                            x=plot_df[x],
+                            y=plot_df[y],
+                            colorscale=params.get('colorscale', 'Viridis'),
+                            contours=dict(
+                                showlabels=True,
+                                labelfont=dict(
+                                    family='Raleway',
+                                    size=12,
+                                    color='white'
+                                )
+                            ),
+                            histfunc='count',
+                            name='Density'
+                        ))
+                    
+                    # Enhance layout
+                    fig.update_layout(
+                        title=title,
+                        xaxis_title=x,
+                        yaxis_title=y
+                    )
+                    
+                    # Validate the figure before returning
+                    fig_dict = fig.to_dict()
+                    
+                    # Ensure traces are actually included
+                    if not fig_dict.get('data') or len(fig_dict['data']) == 0:
+                        print("Warning: Generated contour plot has no data traces - creating fallback")
+                        # Create an explicit fallback contour if needed
+                        fig = go.Figure(go.Contour(
+                            z=[[1, 2, 3, 4, 5], 
+                               [2, 3, 4, 5, 6], 
+                               [3, 4, 5, 6, 7], 
+                               [4, 5, 6, 7, 8], 
+                               [5, 6, 7, 8, 9]],
+                            colorscale='Viridis',
+                            contours=dict(showlabels=True),
+                            name='Fallback Contour'
+                        ))
+                        fig.update_layout(
+                            title=f"Error: Could not create {title} with your data",
+                            annotations=[
+                                dict(
+                                    text="No valid contour could be created with the selected data.<br>Try different columns with more numeric values.",
+                                    xref="paper", yref="paper",
+                                    x=0.5, y=0.5, showarrow=False,
+                                    font=dict(color="red", size=14)
+                                )
+                            ]
+                        )
+                    
+                    return fig
+                else:
+                    raise ValueError("Contour plot requires both X and Y columns")
+                    
+            # DENSITY CONTOUR PLOT
+            elif viz_type == 'density_contour':
+                if x and y:
+                    # Need numeric columns
+                    for col, label in [(x, 'X'), (y, 'Y')]:
+                        if not pd.api.types.is_numeric_dtype(plot_df[col]):
+                            try:
+                                plot_df[col] = pd.to_numeric(plot_df[col], errors='coerce')
+                                print(f"Converted {label} column '{col}' to numeric for density contour plot")
+                            except:
+                                raise ValueError(f"{label} column '{col}' must be numeric for density contour plot")
+                    
+                    # Filter out NaN values
+                    plot_df = plot_df.dropna(subset=[x, y])
+                    
+                    if len(plot_df) < 10:
+                        raise ValueError("Not enough valid data points for density contour plot after filtering")
+                    
+                    # Create a density contour plot
+                    fig = px.density_contour(
+                        plot_df,
+                        x=x,
+                        y=y,
+                        color=color if color in plot_df.columns else None,
+                        color_continuous_scale=params.get('colorscale', 'Viridis'),  # FIXED PARAMETER NAME
+                        marginal_x="histogram",
+                        marginal_y="histogram"
+                    )
+                    
+                    # Improve the contour appearance
+                    fig.update_traces(
+                        contours_coloring="fill", 
+                        colorscale=params.get('colorscale', 'Viridis'),  # This is correct as-is for update_traces
+                        selector=dict(type='contour')
+                    )
+                    
+                    fig.update_layout(
+                        title=title,
+                        xaxis_title=x,
+                        yaxis_title=y
+                    )
+                    
+                    return fig
+                else:
+                    raise ValueError("Density contour plot requires both X and Y columns")
+            
+            else:
+                # Default to scatter plot for unimplemented types
+                print(f"Warning: Advanced plot type '{viz_type}' not specifically implemented. Using scatter plot as fallback.")
+                fig = px.scatter(plot_df, x=x, y=y, color=color, title=f"{title} (Fallback)")
+            
+            return fig
+            
+        except Exception as e:
+            print(f"Error creating {viz_type} plot: {str(e)}")
+            # Create a fallback error figure
+            fig = go.Figure()
+            fig.add_annotation(
+                text=f"Error creating {viz_type} plot: {str(e)}",
+                xref="paper", yref="paper", 
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=14, color="red")
+            )
+            fig.update_layout(
+                title=f"Error in {viz_type} visualization",
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False)
+            )
+            return fig
     
     def create_statistical_viz(self, df, viz_type, params):
         """Create statistical visualizations"""
@@ -505,9 +1050,64 @@ class Visualizer:
                 color_continuous_scale=params.get('colorscale', 'RdBu_r'),
                 title=title
             )
-        # ...existing code for other statistical visualizations...
+            
+            return fig
+        elif viz_type == 'distribution':
+            # Get the column to plot
+            column = params.get('column') or params.get('x') or params.get('y')
+            
+            if not column or column not in df.columns:
+                raise ValueError("Distribution plot requires a valid column")
+                
+            # Ensure the column is numeric
+            if not pd.api.types.is_numeric_dtype(df[column]):
+                try:
+                    df[column] = pd.to_numeric(df[column], errors='coerce')
+                except:
+                    raise ValueError(f"Column {column} must be numeric for distribution plot")
+            
+            # Create figure with histogram and KDE
+            fig = go.Figure()
+            
+            # Add histogram
+            fig.add_trace(go.Histogram(
+                x=df[column].dropna(),
+                name='Histogram',
+                opacity=0.75,
+                nbinsx=30
+            ))
+            
+            # Add KDE (use a smoothed version of the histogram)
+            try:
+                from scipy import stats
+                
+                kde_x = np.linspace(df[column].min(), df[column].max(), 1000)
+                kde_y = stats.gaussian_kde(df[column].dropna())(kde_x)
+                
+                # Scale KDE to match histogram height
+                scale_factor = (df[column].count() / 30) / kde_y.max() * 0.8
+                
+                fig.add_trace(go.Scatter(
+                    x=kde_x,
+                    y=kde_y * scale_factor,
+                    mode='lines',
+                    name='KDE',
+                    line=dict(color='red', width=2)
+                ))
+            except Exception as e:
+                print(f"Warning: Couldn't generate KDE for distribution plot: {e}")
+            
+            fig.update_layout(
+                title=title,
+                xaxis_title=column,
+                yaxis_title='Frequency',
+                bargap=0.05
+            )
+            
+            return fig
         
-        return fig
+        else:
+            raise ValueError(f"Statistical visualization type {viz_type} is not implemented")
     
     def get_visualization_types(self):
         """Get all available visualization types"""
@@ -532,89 +1132,86 @@ class Visualizer:
         if viz_type == 'scatter':
             return {
                 **common_options,
-                'x': {'type': 'column', 'label': 'X-Axis', 'optional': True},
-                'y': {'type': 'column', 'label': 'Y-Axis', 'optional': True},
+                'x': {'type': 'column', 'label': 'X-Axis', 'required': True},
+                'y': {'type': 'column', 'label': 'Y-Axis', 'required': True},
                 'color': {'type': 'column', 'label': 'Color By', 'optional': True},
-                'use_index': {'type': 'boolean', 'label': 'Use Index for Single Column Plot', 'default': False}
+                'use_index': {'type': 'boolean', 'label': 'Use Row Index for Single Column Plot', 'default': False}
             }
-        elif viz_type in ['line', 'bar']:
+        elif viz_type == 'line':
             return {
                 **common_options,
-                'x': {'type': 'column', 'label': 'X-Axis'},
-                'y': {'type': 'column', 'label': 'Y-Axis'},
+                'x': {'type': 'column', 'label': 'X-Axis', 'required': True},
+                'y': {'type': 'column', 'label': 'Y-Axis', 'required': True},
+                'color': {'type': 'column', 'label': 'Color By', 'optional': True},
+                'use_index': {'type': 'boolean', 'label': 'Use Row Index for Single Column Plot', 'default': False}
+            }
+        elif viz_type == 'bar':
+            return {
+                **common_options,
+                'x': {'type': 'column', 'label': 'Categories (X-Axis)', 'required': True},
+                'y': {'type': 'column', 'label': 'Values (Y-Axis)', 'required': True},
                 'color': {'type': 'column', 'label': 'Color By', 'optional': True}
             }
         elif viz_type == 'histogram':
             return {
                 **common_options,
-                'x': {'type': 'column', 'label': 'Values'},
+                'x': {'type': 'column', 'label': 'Values', 'required': True},
                 'color': {'type': 'column', 'label': 'Color By', 'optional': True},
                 'bin_size': {'type': 'number', 'label': 'Bin Size', 'optional': True}
             }
         elif viz_type == 'box':
             return {
                 **common_options,
-                'x': {'type': 'column', 'label': 'Category'},
-                'y': {'type': 'column', 'label': 'Values'},
+                'x': {'type': 'column', 'label': 'Group By (Optional)', 'optional': True},
+                'y': {'type': 'column', 'label': 'Values', 'required': True},
                 'color': {'type': 'column', 'label': 'Color By', 'optional': True}
             }
         elif viz_type == 'pie':
             return {
                 **common_options,
-                'x': {'type': 'column', 'label': 'Names'},
-                'y': {'type': 'column', 'label': 'Values'}
+                'x': {'type': 'column', 'label': 'Categories', 'required': True},
+                'y': {'type': 'column', 'label': 'Values (must be numeric)', 'required': True}
             }
         
         # Advanced viz options
-        elif viz_type == 'violin':
-            return {
-                **common_options,
-                'x': {'type': 'column', 'label': 'Category'},
-                'y': {'type': 'column', 'label': 'Values'},
-                'color': {'type': 'column', 'label': 'Color By', 'optional': True}
-            }
-        elif viz_type == 'heatmap':
-            return {
-                **common_options,
-                'corr': {'type': 'boolean', 'label': 'Use Correlation Matrix', 'default': True},
-                'columns': {'type': 'multicolumn', 'label': 'Columns for Correlation', 'optional': True},
-                'pivot_index': {'type': 'column', 'label': 'Pivot Table Index', 'optional': True},
-                'pivot_columns': {'type': 'column', 'label': 'Pivot Table Columns', 'optional': True},
-                'pivot_values': {'type': 'column', 'label': 'Pivot Table Values', 'optional': True}
-            }
         elif viz_type == 'scatter_3d':
             return {
                 **common_options,
-                'x': {'type': 'column', 'label': 'X-Axis'},
-                'y': {'type': 'column', 'label': 'Y-Axis'},
-                'z': {'type': 'column', 'label': 'Z-Axis'},
+                'x': {'type': 'column', 'label': 'X-Axis', 'required': True},
+                'y': {'type': 'column', 'label': 'Y-Axis', 'required': True},
+                'z': {'type': 'column', 'label': 'Z-Axis', 'required': True},
                 'color': {'type': 'column', 'label': 'Color By', 'optional': True}
             }
-        elif viz_type == 'parallel_coordinates':
+        elif viz_type == 'contour':
             return {
                 **common_options,
-                'color': {'type': 'column', 'label': 'Color By', 'optional': True},
-                'dimensions': {'type': 'multicolumn', 'label': 'Dimensions', 'optional': True}
+                'x': {'type': 'column', 'label': 'X-Axis (Numeric)', 'required': True},
+                'y': {'type': 'column', 'label': 'Y-Axis (Numeric)', 'required': True},
+                'z': {'type': 'column', 'label': 'Z Values (Optional)', 'optional': True},
+                'colorscale': {'type': 'select', 'label': 'Color Scale', 'options': ['Viridis', 'Plasma', 'Inferno', 'Magma', 'Cividis', 'Jet']}
+            }
+        elif viz_type == 'density_contour':
+            return {
+                **common_options,
+                'x': {'type': 'column', 'label': 'X-Axis (Numeric)', 'required': True},
+                'y': {'type': 'column', 'label': 'Y-Axis (Numeric)', 'required': True},
+                'color': {'type': 'column', 'label': 'Color By (Optional)', 'optional': True},
+                'colorscale': {'type': 'select', 'label': 'Color Scale', 'options': ['Viridis', 'Plasma', 'Inferno', 'Magma', 'Cividis', 'Jet']}
             }
         
         # Statistical viz options
         elif viz_type == 'correlation':
             return {
                 **common_options,
-                'columns': {'type': 'multicolumn', 'label': 'Columns', 'optional': True},
+                'columns': {'type': 'multicolumn', 'label': 'Columns to Correlate', 'optional': True},
                 'show_values': {'type': 'boolean', 'label': 'Show Values', 'default': True},
                 'colorscale': {'type': 'select', 'label': 'Color Scale', 'options': ['RdBu_r', 'Viridis', 'Plasma', 'Cividis']}
             }
         elif viz_type == 'distribution':
             return {
                 **common_options,
-                'column': {'type': 'column', 'label': 'Column'},
+                'column': {'type': 'column', 'label': 'Values', 'required': True},
                 'bin_size': {'type': 'number', 'label': 'Bin Size', 'optional': True}
-            }
-        elif viz_type == 'qq_plot':
-            return {
-                **common_options,
-                'column': {'type': 'column', 'label': 'Column'}
             }
         
         # Default options if specific type not handled
