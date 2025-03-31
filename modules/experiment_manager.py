@@ -411,3 +411,68 @@ class ExperimentManager:
         
         conn.close()
         return model_dict
+        
+    def delete_dataset(self, experiment_id, dataset_id):
+        """
+        Delete a dataset from an experiment
+        
+        Parameters:
+        -----------
+        experiment_id : str
+            ID of the experiment
+        dataset_id : str
+            ID of the dataset to delete
+            
+        Returns:
+        --------
+        bool
+            True if deletion was successful, False otherwise
+        """
+        conn = self.get_db_connection()
+        
+        # Check if experiment exists
+        exp = conn.execute("SELECT * FROM experiments WHERE id = ?", (experiment_id,)).fetchone()
+        
+        if not exp:
+            conn.close()
+            return False
+        
+        # Check if dataset exists and belongs to the experiment
+        dataset = conn.execute(
+            "SELECT * FROM datasets WHERE id = ? AND experiment_id = ?", 
+            (dataset_id, experiment_id)
+        ).fetchone()
+        
+        if not dataset:
+            conn.close()
+            return False
+        
+        try:
+            # Get dataset details for file deletion
+            dataset_dict = dict(dataset)
+            filename = dataset_dict['filename']
+            
+            # Delete dataset from database
+            conn.execute("DELETE FROM datasets WHERE id = ?", (dataset_id,))
+            
+            # Update experiment's updated_at timestamp
+            now = datetime.now().isoformat()
+            conn.execute(
+                "UPDATE experiments SET updated_at = ? WHERE id = ?",
+                (now, experiment_id)
+            )
+            
+            conn.commit()
+            
+            # Delete the actual dataset file if it exists
+            file_path = f"uploads/{filename}"
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                
+            return True
+        except Exception as e:
+            conn.rollback()
+            print(f"Error deleting dataset: {e}")
+            return False
+        finally:
+            conn.close()

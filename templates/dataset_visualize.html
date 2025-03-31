@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dataset Visualization - SpectraML</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.33.1/plotly.min.js" ></script>
+    <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body class="bg-gray-50">
@@ -85,7 +86,24 @@
             <div class="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
                     <h2 class="text-lg font-medium text-gray-900">Create Visualization</h2>
-                    <div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    
+                    <!-- Visualization Category Tabs -->
+                    <div class="mt-4 border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button class="viz-category-tab border-indigo-500 text-indigo-600 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm" data-category="basic">
+                                Basic
+                            </button>
+                            <button class="viz-category-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm" data-category="advanced">
+                                Advanced
+                            </button>
+                            <button class="viz-category-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm" data-category="statistical">
+                                Statistical
+                            </button>
+                        </nav>
+                    </div>
+                    
+                    <!-- Basic Visualizations -->
+                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" id="basic-viz">
                         <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
@@ -97,10 +115,32 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="histogram">
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="line">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Line Chart</h3>
+                                    <p class="text-sm text-gray-500">Show trends over a continuous interval</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="bar">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-blue-100 text-blue-800">
                                     <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Bar Chart</h3>
+                                    <p class="text-sm text-gray-500">Compare quantities across categories</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="histogram">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
+                                    <i class="fas fa-chart-bar fa-rotate-90"></i>
                                 </div>
                                 <div class="ml-4">
                                     <h3 class="text-md font-medium">Histogram</h3>
@@ -116,6 +156,179 @@
                                 <div class="ml-4">
                                     <h3 class="text-md font-medium">Box Plot</h3>
                                     <p class="text-sm text-gray-500">Show distribution statistics</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="pie">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Pie Chart</h3>
+                                    <p class="text-sm text-gray-500">Show proportion of categories</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Visualizations -->
+                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden" id="advanced-viz">
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="violin">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-purple-100 text-purple-800">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Violin Plot</h3>
+                                    <p class="text-sm text-gray-500">Show distribution density and statistics</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="heatmap">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-red-100 text-red-800">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Heatmap</h3>
+                                    <p class="text-sm text-gray-500">Visualize matrix data with colors</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter_3d">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-cube"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">3D Scatter</h3>
+                                    <p class="text-sm text-gray-500">Visualize data in three dimensions</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="contour">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-gray-100 text-gray-800">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Contour Plot</h3>
+                                    <p class="text-sm text-gray-500">Show 3D surface with contour lines</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="parallel_coordinates">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
+                                    <i class="fas fa-stream"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Parallel Coordinates</h3>
+                                    <p class="text-sm text-gray-500">Compare multiple variables</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter_matrix">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-th"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Scatter Matrix</h3>
+                                    <p class="text-sm text-gray-500">Grid of scatter plots</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="treemap">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-green-100 text-green-800">
+                                    <i class="fas fa-sitemap"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Treemap</h3>
+                                    <p class="text-sm text-gray-500">Hierarchical data with nested rectangles</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="sankey">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-teal-100 text-teal-800">
+                                    <i class="fas fa-random"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Sankey Diagram</h3>
+                                    <p class="text-sm text-gray-500">Visualize flow between nodes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistical Visualizations -->
+                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden" id="statistical-viz">
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="correlation">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-red-100 text-red-800">
+                                    <i class="fas fa-th"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Correlation Matrix</h3>
+                                    <p class="text-sm text-gray-500">Visualize correlations between variables</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="distribution">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
+                                    <i class="fas fa-chart-area"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Distribution Plot</h3>
+                                    <p class="text-sm text-gray-500">Show data distribution with KDE</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="qq_plot">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Q-Q Plot</h3>
+                                    <p class="text-sm text-gray-500">Compare distributions</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="residual_plot">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-green-100 text-green-800">
+                                    <i class="fas fa-chart-scatter"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Residual Plot</h3>
+                                    <p class="text-sm text-gray-500">Analyze regression model fit</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="pair_plot">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-purple-100 text-purple-800">
+                                    <i class="fas fa-th-large"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Pair Plot</h3>
+                                    <p class="text-sm text-gray-500">Matrix of relationships in dataset</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="time_series_decomposition">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">Time Series Decomposition</h3>
+                                    <p class="text-sm text-gray-500">Analyze temporal patterns</p>
                                 </div>
                             </div>
                         </div>
@@ -154,6 +367,18 @@
                                         {% endfor %}
                                     {% endif %}
                                 </select>
+                            </div>
+
+                            <div class="sm:col-span-6 mt-4 hidden" id="indexOptionContainer">
+                                <div class="flex items-center">
+                                    <input id="useIndex" name="useIndex" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <label for="useIndex" class="ml-2 block text-sm text-gray-700">
+                                        Use Row Index for Single Column Plot
+                                    </label>
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Enable to create a scatter plot with a single column (using row numbers as X-axis)
+                                </p>
                             </div>
 
                             <div class="sm:col-span-6">
@@ -200,12 +425,32 @@
     </footer>
 
     <script>
+        // Handle category tab switching
+        document.querySelectorAll('.viz-category-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                document.querySelectorAll('.viz-category-tab').forEach(t => {
+                    t.classList.remove('border-indigo-500', 'text-indigo-600');
+                    t.classList.add('border-transparent', 'text-gray-500');
+                });
+                this.classList.remove('border-transparent', 'text-gray-500');
+                this.classList.add('border-indigo-500', 'text-indigo-600');
+                
+                // Show corresponding content
+                const category = this.dataset.category;
+                document.querySelectorAll('.viz-category-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(`${category}-viz`).classList.remove('hidden');
+            });
+        });
+
         // Handle visualization type selection
         document.querySelectorAll('.viz-type-card').forEach(card => {
             card.addEventListener('click', function() {
                 const vizType = this.dataset.type;
                 document.getElementById('vizType').value = vizType;
-                document.getElementById('configTitle').textContent = `Configure ${vizType.charAt(0).toUpperCase() + vizType.slice(1)} Plot`;
+                document.getElementById('configTitle').textContent = `Configure ${vizType.replace('_', ' ').charAt(0).toUpperCase() + vizType.replace('_', ' ').slice(1)} Plot`;
                 
                 // Show configuration section
                 document.getElementById('vizConfig').classList.remove('hidden');
@@ -215,8 +460,83 @@
                 
                 // Hide result section
                 document.getElementById('vizResult').classList.add('hidden');
+                
+                // Special handling for different viz types
+                handleSpecialVizOptions(vizType);
             });
         });
+        
+        // Function to handle special visualization type options
+        function handleSpecialVizOptions(vizType) {
+            // Clear any previous special options first
+            const specialOptionsContainer = document.getElementById('specialOptions');
+            if (specialOptionsContainer) {
+                specialOptionsContainer.remove();
+            }
+            
+            // Find the submit button container to insert before
+            const submitButtonContainer = document.querySelector('#vizForm button[type="submit"]').parentNode;
+            
+            // Create a container for special options
+            const container = document.createElement('div');
+            container.id = 'specialOptions';
+            container.className = 'sm:col-span-6 mt-4';
+            
+            // Add specific options based on visualization type
+            if (vizType === 'scatter' || vizType === 'line') {
+                console.log(`Setting up Use Index option for ${vizType} chart`);
+                
+                // Add index option for scatter and line plots - with enhanced visibility
+                container.innerHTML = `
+                    <div class="flex items-center bg-blue-50 p-4 rounded-md mb-4">
+                        <input id="useIndex" name="useIndex" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="useIndex" class="ml-2 block text-sm text-gray-700 font-medium">
+                            Use Row Index for Single Column Plot
+                        </label>
+                    </div>
+                    <div class="mt-1 text-sm text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        When checked, you only need to select either X-axis OR Y-axis (not both). 
+                        The row numbers will be used for the other axis automatically.
+                    </div>
+                `;
+                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+                
+                // Add event listener for the checkbox with improved feedback
+                const useIndexCheckbox = document.getElementById('useIndex');
+                if (useIndexCheckbox) {
+                    useIndexCheckbox.addEventListener('change', function() {
+                        const xAxisField = document.getElementById('xAxis');
+                        const yAxisField = document.getElementById('yAxis');
+                        const xLabel = document.querySelector('label[for="xAxis"]');
+                        const yLabel = document.querySelector('label[for="yAxis"]');
+                        
+                        console.log(`Use Index checkbox changed: ${this.checked}`);
+                        
+                        if (this.checked) {
+                            // Update labels to make it clear you only need one
+                            xLabel.textContent = "X-Axis Column (Optional if Y-Axis is selected)";
+                            yLabel.textContent = "Y-Axis Column (Optional if X-Axis is selected)";
+                            
+                            // Remove required attributes
+                            xAxisField.removeAttribute('required');
+                            yAxisField.removeAttribute('required');
+                        } else {
+                            // Restore original labels
+                            xLabel.textContent = "X-Axis Column";
+                            yLabel.textContent = "Y-Axis Column";
+                            
+                            // Make both required again
+                            xAxisField.setAttribute('required', 'required');
+                            yAxisField.setAttribute('required', 'required');
+                        }
+                    });
+                } else {
+                    console.error("Failed to find useIndex checkbox after creating it!");
+                }
+            }
+            // ...existing code for other visualization types...
+        }
         
         // Handle visualization form submission
         document.getElementById('vizForm').addEventListener('submit', function(e) {
@@ -226,13 +546,50 @@
             const xAxis = document.getElementById('xAxis').value;
             const yAxis = document.getElementById('yAxis').value;
             
-            // Validate form
-            if (vizType === 'scatter' && (!xAxis || !yAxis)) {
-                alert('Please select both X and Y axis columns');
-                return;
+            // More robust method to check if checkbox exists and is checked
+            let useIndex = false;
+            const useIndexCheckbox = document.getElementById('useIndex');
+            if (useIndexCheckbox) {
+                useIndex = useIndexCheckbox.checked;
+                console.log(`Form submission - useIndex element exists, checked=${useIndex}`);
+            } else {
+                console.log('Form submission - useIndex element not found in DOM');
             }
             
-            if ((vizType === 'histogram' || vizType === 'box') && !xAxis) {
+            console.log(`Validating ${vizType} chart - useIndex: ${useIndex}, xAxis: ${xAxis}, yAxis: ${yAxis}`);
+            
+            // Enhanced validation for specific chart types
+            if (vizType === 'scatter' || vizType === 'line') {
+                if (useIndex) {
+                    // With index option, we need AT LEAST ONE of x OR y
+                    if (!xAxis && !yAxis) {
+                        alert('With "Use Index" option enabled, please select at least one column (either X-Axis or Y-Axis)');
+                        return;
+                    }
+                    console.log("Validation passed with Use Index option");
+                } else {
+                    // Without index option, we need BOTH x AND y
+                    if (!xAxis || !yAxis) {
+                        alert(`Please select both X and Y axis columns for the ${vizType} chart, or enable the "Use Index" option and select one column`);
+                        return;
+                    }
+                    console.log("Validation passed for standard plot with both axes");
+                }
+            } else if (vizType === 'pie') {
+                if (!xAxis) {
+                    alert('Please select a Names/Categories column (X-Axis) for the pie chart');
+                    return;
+                }
+                if (!yAxis) {
+                    alert('Please select a Values column (Y-Axis) for the pie chart');
+                    return;
+                }
+            } else if (vizType === 'box') {
+                if (!yAxis) {
+                    alert('Please select a Values column (Y-Axis) for the box plot');
+                    return;
+                }
+            } else if (vizType === 'histogram' && !xAxis) {
                 alert('Please select X axis column');
                 return;
             }
@@ -243,36 +600,39 @@
                 viz_type: vizType,
                 params: {
                     x: xAxis,
-                    y: yAxis
+                    y: yAxis,
+                    use_index: useIndex  // Pass the correct useIndex value
                 }
             };
             
-            // Make API request
-            fetch('/api/visualize', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error creating visualization: ' + data.error);
-                    return;
-                }
-                
-                // Display visualization
-                document.getElementById('vizResult').classList.remove('hidden');
-                
-                // Create plot
-                Plotly.newPlot('plotContainer', data.figure.data, data.figure.layout);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error creating visualization');
-            });
+            console.log("Sending visualization request with params:", requestData.params);
+            
+            // ...existing code for API request...
         });
+
+        // Function to create a visualization
+        function createVisualization() {
+            // ...existing code...
+            
+            // Get form data with more explicit checking for useIndex
+            const vizType = document.getElementById('vizType').value;
+            const xAxis = document.getElementById('xAxis').value;
+            const yAxis = document.getElementById('yAxis').value;
+            
+            // More robust way to get the useIndex value
+            let useIndex = false;
+            const useIndexCheckbox = document.getElementById('useIndex');
+            if (useIndexCheckbox) {
+                useIndex = useIndexCheckbox.checked;
+                console.log(`Creating visualization - useIndex element exists, checked=${useIndex}`);
+            } else {
+                console.log('Creating visualization - useIndex element not found in DOM');
+            }
+            
+            // ...existing code...
+        }
+        
+        // ...existing code...
     </script>
 </body>
 </html>

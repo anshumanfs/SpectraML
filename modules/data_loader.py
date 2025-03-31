@@ -13,37 +13,60 @@ class DataLoader:
         self.supported_formats = ['csv', 'xlsx', 'json']
     
     def load_data(self, file_path, file_type=None):
-        print(f"Loading data from {file_path} of type {file_type}")
         """
-        Load data from a file into a pandas DataFrame
+        Load data from a file
         
         Parameters:
         -----------
         file_path : str
             Path to the data file
         file_type : str, optional
-            Type of file (csv, xlsx, json). If None, inferred from extension
+            Type of file (inferred from extension if not provided)
             
         Returns:
         --------
         pandas.DataFrame
             Loaded data
         """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
+        if not file_type:
+            file_type = os.path.splitext(file_path)[1].lstrip('.').lower()
         
-        if file_type is None:
-            file_type = file_path.split('.')[-1].lower()
-        
-        if file_type not in self.supported_formats:
-            raise ValueError(f"Unsupported file format: {file_type}. Supported formats: {self.supported_formats}")
-        
-        if file_type == 'csv':
-            return pd.read_csv(file_path)
-        elif file_type == 'xlsx':
-            return pd.read_excel(file_path)
-        elif file_type == 'json':
-            return pd.read_json(file_path)
+        try:
+            if file_type == 'csv':
+                df = pd.read_csv(file_path)
+            elif file_type in ['xls', 'xlsx']:
+                df = pd.read_excel(file_path)
+            elif file_type == 'json':
+                df = pd.read_json(file_path)
+            else:
+                raise ValueError(f"Unsupported file type: {file_type}")
+            
+            # Attempt to convert string columns that might actually be numeric
+            # This helps with plotting numeric data that was loaded as strings
+            for col in df.columns:
+                # Only try to convert if it's an object/string type
+                if df[col].dtype == 'object':
+                    try:
+                        # Try to convert to numeric, but keep non-numeric values as is
+                        numeric_col = pd.to_numeric(df[col], errors='coerce')
+                        
+                        # If most values converted successfully, replace the column
+                        if numeric_col.notna().sum() > 0.5 * len(numeric_col):
+                            df[col] = numeric_col
+                    except:
+                        # Keep as is if conversion fails
+                        pass
+            
+            # Print information about the loaded data
+            print(f"Loaded dataframe from {file_path}")
+            print(f"Shape: {df.shape}")
+            print(f"Columns: {df.columns.tolist()}")
+            print(f"Data types:\n{df.dtypes}")
+            
+            return df
+        except Exception as e:
+            print(f"Error loading data: {str(e)}")
+            raise
     
     def get_data_info(self, file_path, file_type=None):
         """

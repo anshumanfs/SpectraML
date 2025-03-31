@@ -6,6 +6,7 @@ import uuid
 import sqlite3
 from datetime import datetime
 import pandas as pd
+import logging
 
 from modules.data_loader import DataLoader
 from modules.visualization import Visualizer
@@ -254,6 +255,21 @@ def delete_experiment(exp_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/experiment/<exp_id>/dataset/<dataset_id>', methods=['DELETE'])
+def delete_dataset(exp_id, dataset_id):
+    """Delete a dataset from an experiment"""
+    # Add logging to debug the issue
+    logging.info(f"Deleting dataset {dataset_id} from experiment {exp_id}")
+    try:
+        success = experiment_manager.delete_dataset(exp_id, dataset_id)
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to delete dataset or dataset not found'}), 404
+    except Exception as e:
+        logging.error(f"Error deleting dataset: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/dataset/<dataset_id>/visualize')
 def visualize_dataset(dataset_id):
     """Visualization page for a specific dataset"""
@@ -392,6 +408,235 @@ def preview_dataset(dataset_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/dataset/columns/<dataset_id>', methods=['GET'])
+def get_dataset_columns(dataset_id):
+    """Get columns for a dataset"""
+    try:
+        # Get dataset info
+        dataset = experiment_manager.get_dataset(dataset_id)
+        if not dataset:
+            return jsonify({'error': 'Dataset not found'}), 404
+        
+        # Load file
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], dataset['filename'])
+        
+        # Load data and get column info
+        df = loader.load_data(file_path, dataset['filetype'])
+        
+        columns = [
+            {
+                'name': col,
+                'dtype': str(df[col].dtype),
+                'is_numeric': pd.api.types.is_numeric_dtype(df[col])
+            }
+            for col in df.columns
+        ]
+        
+        return jsonify({
+            'success': True,
+            'dataset_id': dataset_id,
+            'columns': columns
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visualization/options/<viz_type>', methods=['GET'])
+def get_visualization_options(viz_type):
+    """Get options for a specific visualization type"""
+    try:
+        options = visualizer.get_visualization_options(viz_type)
+        
+        return jsonify({
+            'success': True,
+            'viz_type': viz_type,
+            'options': options
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visualization/save', methods=['POST'])
+def save_visualization():
+    """Save a visualization for an experiment"""
+    data = request.json
+    experiment_id = data.get('experiment_id')
+    dataset_id = data.get('dataset_id')
+    viz_type = data.get('viz_type')
+    params = data.get('params', {})
+    title = data.get('title', f"{viz_type.replace('_', ' ').title()} Visualization")
+    
+    try:
+        # Get dataset info
+        dataset = experiment_manager.get_dataset(dataset_id)
+        if not dataset:
+            return jsonify({'error': 'Dataset not found'}), 404
+        
+        # Create visualization to get the plot data
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], dataset['filename'])
+        result = visualizer.create_visualization(file_path, viz_type, params)
+        
+        # Save visualization metadata
+        viz_id = str(uuid.uuid4())
+        now = datetime.now().isoformat()
+        
+        # Prepare data for storage
+        viz_data = {
+            'id': viz_id,
+            'experiment_id': experiment_id,
+            'dataset_id': dataset_id,
+            'viz_type': viz_type,
+            'params': params,
+            'title': title,
+            'plot_data': result['plot'],
+            'created_at': now
+        }
+        
+        # Save to database (implementation can vary based on your storage model)
+        # For this example, we'll assume a simple file-based storage
+        viz_dir = os.path.join('storage', 'visualizations')
+        os.makedirs(viz_dir, exist_ok=True)
+        
+        with open(os.path.join(viz_dir, f"{viz_id}.json"), 'w') as f:
+            json.dump(viz_data, f)
+        
+        # Also add it to experiment metadata for easy retrieval
+        experiment = experiment_manager.get_experiment(experiment_id)
+        if experiment:
+            if 'visualizations' not in experiment['config']:
+                experiment['config']['visualizations'] = []
+            
+            # Add visualization reference
+            experiment['config']['visualizations'].append({
+                'id': viz_id,
+                'title': title,
+                'viz_type': viz_type,
+                'dataset_id': dataset_id,
+                'created_at': now
+            })
+            
+            # Update experiment
+            experiment_manager.update_experiment(experiment_id, {
+                'config': json.dumps(experiment['config'])
+            })
+        
+        return jsonify({
+            'success': True,
+            'visualization_id': viz_id
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/experiment/<exp_id>/visualizations', methods=['GET'])
+def get_experiment_visualizations(exp_id):
+    """Get all visualizations for an experiment"""
+    try:
+        experiment = experiment_manager.get_experiment(exp_id)
+        if not experiment:
+            return jsonify({'error': 'Experiment not found'}), 404
+        
+        visualizations = experiment['config'].get('visualizations', [])
+        
+        return jsonify({
+            'success': True,
+            'experiment_id': exp_id,
+            'visualizations': visualizations
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visualization/<viz_id>/thumbnail', methods=['GET'])
+def get_visualization_thumbnail(viz_id):
+    """Get thumbnail data for a visualization"""
+    try:
+        # Load visualization data
+        viz_path = os.path.join('storage', 'visualizations', f"{viz_id}.json")
+        
+        if not os.path.exists(viz_path):
+            return jsonify({'error': 'Visualization not found'}), 404
+        
+        with open(viz_path, 'r') as f:
+            viz_data = json.load(f)
+        
+        return jsonify({
+            'success': True,
+            'visualization_id': viz_id,
+            'plot': viz_data['plot_data']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visualization/<viz_id>', methods=['DELETE'])
+def delete_visualization(viz_id):
+    """Delete a visualization"""
+    try:
+        # Get visualization file path
+        viz_path = os.path.join('storage', 'visualizations', f"{viz_id}.json")
+        
+        if not os.path.exists(viz_path):
+            return jsonify({'error': 'Visualization not found'}), 404
+        
+        # Load visualization data to get experiment ID
+        with open(viz_path, 'r') as f:
+            viz_data = json.load(f)
+        
+        experiment_id = viz_data['experiment_id']
+        
+        # Remove from experiment metadata
+        experiment = experiment_manager.get_experiment(experiment_id)
+        if experiment and 'visualizations' in experiment['config']:
+            # Filter out the visualization to delete
+            experiment['config']['visualizations'] = [
+                viz for viz in experiment['config']['visualizations'] 
+                if viz['id'] != viz_id
+            ]
+            
+            # Update experiment
+            experiment_manager.update_experiment(experiment_id, {
+                'config': json.dumps(experiment['config'])
+            })
+        
+        # Delete visualization file
+        os.remove(viz_path)
+        
+        return jsonify({
+            'success': True
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/visualization/<viz_id>')
+def view_visualization(viz_id):
+    """View a single visualization"""
+    try:
+        # Load visualization data
+        viz_path = os.path.join('storage', 'visualizations', f"{viz_id}.json")
+        
+        if not os.path.exists(viz_path):
+            return "Visualization not found", 404
+        
+        with open(viz_path, 'r') as f:
+            viz_data = json.load(f)
+        
+        # Get experiment and dataset info
+        experiment = experiment_manager.get_experiment(viz_data['experiment_id'])
+        dataset = experiment_manager.get_dataset(viz_data['dataset_id'])
+        
+        return render_template(
+            'visualization.html',
+            experiment=experiment,
+            dataset=dataset,
+            visualization=viz_data
+        )
+    except Exception as e:
+        flash(f"Error loading visualization: {str(e)}", "error")
+        return redirect('/')
+
 if __name__ == "__main__":
     init_db()
+    
+    # Print all registered routes for debugging
+    logging.basicConfig(level=logging.INFO)
+    logging.info("Registered Routes:")
+    for rule in app.url_map.iter_rules():
+        logging.info(f"{rule} - {rule.methods}")
+    
     app.run(debug=True)

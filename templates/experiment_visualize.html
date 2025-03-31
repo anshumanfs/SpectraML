@@ -70,37 +70,675 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="bg-white mt-10">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
-            <div class="flex justify-center space-x-6 md:order-2">
-                <a href="#" class="text-gray-400 hover:text-gray-500">
-                    <span class="sr-only">GitHub</span>
-                    <i class="fab fa-github text-xl"></i>
-                </a>
-                <a href="#" class="text-gray-400 hover:text-gray-500">
-                    <span class="sr-only">Twitter</span>
-                    <i class="fab fa-twitter text-xl"></i>
-                </a>
+        <!-- Visualization Preview -->
+        <div class="relative bg-white p-4 rounded-lg border border-gray-200 h-full">
+            <div id="previewContainer" class="hidden">
+                <h3 class="text-lg font-medium text-gray-900" id="previewTitle">Visualization Preview</h3>
+                <div id="plotPreview" class="mt-4 h-96"></div>
             </div>
-            <div class="mt-8 md:mt-0 md:order-1">
-                <p class="text-center text-base text-gray-400">
-                    &copy; 2025 SpectraML. All rights reserved.
-                </p>
+            <div id="emptyPreview" class="flex flex-col items-center justify-center h-96">
+                <i class="fas fa-chart-line text-5xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-center">Select a dataset and visualization type<br>then click "Preview Visualization" to see your chart.</p>
+            </div>
+            <div id="loadingPreview" class="hidden flex flex-col items-center justify-center h-96">
+                <i class="fas fa-spinner fa-spin text-4xl text-indigo-500 mb-4"></i>
+                <p class="text-gray-600">Generating visualization...</p>
             </div>
         </div>
-    </footer>
+    </div>
+</div>
 
-    <script>
+<!-- Visualization Gallery -->
+<div class="px-4 sm:px-0 mt-8">
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h2 class="text-xl font-bold text-gray-900">Visualization Gallery</h2>
+            <p class="mt-2 text-sm text-gray-500">Previously created visualizations for this experiment</p>
+            
+            <div id="visualizationGallery" class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Visualization items will be loaded here -->
+                <div class="flex flex-col items-center justify-center h-60 bg-gray-50 rounded-lg border border-gray-200 text-center p-4">
+                    <i class="fas fa-images text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-500">No visualizations saved yet</p>
+                    <p class="text-sm text-gray-400 mt-2">Create and save visualizations to see them here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-white mt-10">
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+        <div class="flex justify-center space-x-6 md:order-2">
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+                <span class="sr-only">GitHub</span>
+                <i class="fab fa-github text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+                <span class="sr-only">Twitter</span>
+                <i class="fab fa-twitter text-xl"></i>
+            </a>
+        </div>
+        <div class="mt-8 md:mt-0 md:order-1">
+            <p class="text-center text-base text-gray-400">
+                &copy; 2025 SpectraML. All rights reserved.
+            </p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Handle dataset selection
+    document.querySelectorAll('.dataset-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const datasetId = this.dataset.id;
+            window.location.href = `/dataset/${datasetId}/visualize`;
+        });
+    });
+
+    // Store dataset columns for quick access
+    let datasetColumns = {};
+    let currentDataset = null;
+    let currentVizType = null;
+    
+    // Initialize form controls
+    document.addEventListener('DOMContentLoaded', function() {
+        const datasetSelect = document.getElementById('dataset');
+        const vizTypeSelect = document.getElementById('vizType');
+        const previewBtn = document.getElementById('previewBtn');
+        const saveVizBtn = document.getElementById('saveVizBtn');
+        
         // Handle dataset selection
-        document.querySelectorAll('.dataset-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const datasetId = this.dataset.id;
-                window.location.href = `/dataset/${datasetId}/visualize`;
+        datasetSelect.addEventListener('change', function() {
+            if (this.value) {
+                currentDataset = this.value;
+                const filename = this.options[this.selectedIndex].dataset.filename;
+                
+                // Fetch dataset columns if not already cached
+                if (!datasetColumns[currentDataset]) {
+                    fetch(`/api/dataset/columns/${currentDataset}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                datasetColumns[currentDataset] = data.columns;
+                                
+                                // Update visualization options if viz type is selected
+                                if (currentVizType) {
+                                    updateVizOptions(currentVizType);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching columns:', error);
+                        });
+                }
+            } else {
+                currentDataset = null;
+            }
+            
+            // Reset visualization preview
+            document.getElementById('previewContainer').classList.add('hidden');
+            document.getElementById('emptyPreview').classList.remove('hidden');
+            
+            // Enable/disable preview button
+            checkPreviewEnabled();
+        });
+        
+        // Handle visualization type selection
+        vizTypeSelect.addEventListener('change', function() {
+            if (this.value) {
+                currentVizType = this.value;
+                updateVizOptions(currentVizType);
+            } else {
+                currentVizType = null;
+                document.getElementById('vizOptions').innerHTML = '';
+            }
+            
+            // Reset visualization preview
+            document.getElementById('previewContainer').classList.add('hidden');
+            document.getElementById('emptyPreview').classList.remove('hidden');
+            
+            // Enable/disable preview button
+            checkPreviewEnabled();
+        });
+        
+        // Handle preview button click
+        previewBtn.addEventListener('click', function() {
+            if (currentDataset && currentVizType) {
+                previewVisualization();
+            }
+        });
+        
+        // Handle save button click
+        saveVizBtn.addEventListener('click', function() {
+            if (currentDataset && currentVizType) {
+                saveVisualization();
+            }
+        });
+    });
+    
+    // Update visualization options based on selected type
+    function updateVizOptions(vizType) {
+        const optionsContainer = document.getElementById('vizOptions');
+        
+        // Show loading state
+        optionsContainer.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i> Loading options...</div>';
+        
+        // Fetch options for this visualization type
+        fetch(`/api/visualization/options/${vizType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const options = data.options;
+                    
+                    // Clear container
+                    optionsContainer.innerHTML = '';
+                    
+                    // Add option controls
+                    for (const [key, option] of Object.entries(options)) {
+                        const optionGroup = document.createElement('div');
+                        optionGroup.className = 'mb-4';
+                        
+                        // Create label
+                        const label = document.createElement('label');
+                        label.className = 'block text-sm font-medium text-gray-700 mb-1';
+                        label.htmlFor = `option-${key}`;
+                        label.textContent = option.label + (option.optional ? ' (optional)' : '');
+                        optionGroup.appendChild(label);
+                        
+                        // Create input based on option type
+                        let input;
+                        
+                        if (option.type === 'column') {
+                            // Column selector
+                            input = document.createElement('select');
+                            input.id = `option-${key}`;
+                            input.name = key;
+                            input.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md';
+                            
+                            // Add empty option if optional
+                            if (option.optional) {
+                                const emptyOption = document.createElement('option');
+                                emptyOption.value = '';
+                                emptyOption.textContent = '-- Select a column --';
+                                input.appendChild(emptyOption);
+                            }
+                            
+                            // Add column options if dataset is selected
+                            if (currentDataset && datasetColumns[currentDataset]) {
+                                datasetColumns[currentDataset].forEach(column => {
+                                    const option = document.createElement('option');
+                                    option.value = column.name;
+                                    option.textContent = `${column.name} (${column.dtype})`;
+                                    input.appendChild(option);
+                                });
+                            }
+                        } else if (option.type === 'multicolumn') {
+                            // Multi-column selector
+                            input = document.createElement('select');
+                            input.id = `option-${key}`;
+                            input.name = key;
+                            input.multiple = true;
+                            input.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md';
+                            
+                            // Add column options if dataset is selected
+                            if (currentDataset && datasetColumns[currentDataset]) {
+                                datasetColumns[currentDataset].forEach(column => {
+                                    const option = document.createElement('option');
+                                    option.value = column.name;
+                                    option.textContent = `${column.name} (${column.dtype})`;
+                                    input.appendChild(option);
+                                });
+                            }
+                            
+                            // Add helper text
+                            const helperText = document.createElement('p');
+                            helperText.className = 'mt-1 text-xs text-gray-500';
+                            helperText.textContent = 'Hold Ctrl/Cmd to select multiple columns';
+                            optionGroup.appendChild(helperText);
+                        } else if (option.type === 'boolean') {
+                            // Boolean checkbox
+                            const checkboxGroup = document.createElement('div');
+                            checkboxGroup.className = 'flex items-center mt-1';
+                            
+                            input = document.createElement('input');
+                            input.type = 'checkbox';
+                            input.id = `option-${key}`;
+                            input.name = key;
+                            input.className = 'h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded';
+                            
+                            if (option.default === true) {
+                                input.checked = true;
+                            }
+                            
+                            checkboxGroup.appendChild(input);
+                            optionGroup.appendChild(checkboxGroup);
+                        } else if (option.type === 'select') {
+                            // Select dropdown
+                            input = document.createElement('select');
+                            input.id = `option-${key}`;
+                            input.name = key;
+                            input.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md';
+                            
+                            // Add options
+                            if (option.options) {
+                                option.options.forEach(optionValue => {
+                                    const opt = document.createElement('option');
+                                    opt.value = optionValue;
+                                    opt.textContent = optionValue;
+                                    input.appendChild(opt);
+                                });
+                            }
+                        } else {
+                            // Default to text input
+                            input = document.createElement('input');
+                            input.type = option.type === 'number' ? 'number' : 'text';
+                            input.id = `option-${key}`;
+                            input.name = key;
+                            input.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md';
+                            
+                            if (option.default) {
+                                input.value = option.default;
+                            }
+                        }
+                        
+                        optionGroup.appendChild(input);
+                        optionsContainer.appendChild(optionGroup);
+                    }
+                } else {
+                    optionsContainer.innerHTML = '<div class="text-center py-4 text-red-500">Error loading options</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching options:', error);
+                optionsContainer.innerHTML = '<div class="text-center py-4 text-red-500">Error loading options</div>';
+            });
+    }
+    
+    // Check if preview button should be enabled
+    function checkPreviewEnabled() {
+        const previewBtn = document.getElementById('previewBtn');
+        
+        if (currentDataset && currentVizType) {
+            previewBtn.disabled = false;
+            previewBtn.classList.remove('bg-gray-300', 'hover:bg-gray-300');
+            previewBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        } else {
+            previewBtn.disabled = true;
+            previewBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            previewBtn.classList.add('bg-gray-300', 'hover:bg-gray-300');
+        }
+    }
+    
+    // Preview visualization
+    function previewVisualization() {
+        // Show loading state
+        document.getElementById('emptyPreview').classList.add('hidden');
+        document.getElementById('previewContainer').classList.add('hidden');
+        document.getElementById('loadingPreview').classList.remove('hidden');
+        
+        // Get visualization parameters from form
+        const params = getVisualizationParams();
+        
+        // Send request to create visualization
+        fetch('/api/visualize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                dataset_id: currentDataset,
+                viz_type: currentVizType,
+                params: params
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update preview title
+                document.getElementById('previewTitle').textContent = data.title || 'Visualization Preview';
+                
+                try {
+                    console.log('Raw plot data type:', typeof data.plot);
+                    
+                    // Parse the plot data - handling both string and object cases
+                    let plotData;
+                    if (typeof data.plot === 'string') {
+                        plotData = JSON.parse(data.plot);
+                    } else {
+                        plotData = data.plot;
+                    }
+                    
+                    console.log('Parsed plot data structure:', plotData);
+                    
+                    // Direct use of the Plotly data
+                    if (plotData && plotData.data) {
+                        console.log('Plot has data array with length:', plotData.data.length);
+                        
+                        // Create the plot with direct data
+                        Plotly.newPlot('plotPreview', 
+                            plotData.data, 
+                            plotData.layout || {}, 
+                            {responsive: true}
+                        )
+                        .then(() => {
+                            console.log('Plot successfully rendered');
+                            
+                            // Hide loading, show preview
+                            document.getElementById('loadingPreview').classList.add('hidden');
+                            document.getElementById('previewContainer').classList.remove('hidden');
+                            
+                            // Enable save button if we have a valid save button
+                            const saveVizBtn = document.getElementById('saveVizBtn');
+                            if (saveVizBtn) {
+                                saveVizBtn.disabled = false;
+                                saveVizBtn.classList.remove('bg-gray-300', 'hover:bg-gray-300');
+                                saveVizBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error rendering plot:', err);
+                            throw err;
+                        });
+                    } else {
+                        throw new Error('Invalid plot data structure: missing data array');
+                    }
+                } catch (err) {
+                    console.error('Error processing visualization data:', err);
+                    console.log('Raw plot data received:', data.plot);
+                    
+                    // Show error in the UI
+                    document.getElementById('loadingPreview').classList.add('hidden');
+                    document.getElementById('emptyPreview').classList.remove('hidden');
+                    document.getElementById('emptyPreview').innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-96">
+                            <i class="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+                            <p class="text-red-500 text-center">Error rendering visualization</p>
+                            <p class="text-gray-500 text-sm mt-2">${err.message}</p>
+                            <div class="mt-4">
+                                <button onclick="showRawData()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
+                                    Show Raw Data
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Store raw data for debugging
+                    window._rawPlotData = data.plot;
+                }
+            } else {
+                // Show error
+                alert('Error creating visualization: ' + data.error);
+                
+                // Hide loading, show empty state
+                document.getElementById('loadingPreview').classList.add('hidden');
+                document.getElementById('emptyPreview').classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error creating visualization');
+            
+            // Hide loading, show empty state
+            document.getElementById('loadingPreview').classList.add('hidden');
+            document.getElementById('emptyPreview').classList.remove('hidden');
+        });
+    }
+    
+    // Function to show raw data for debugging
+    function showRawData() {
+        if (window._rawPlotData) {
+            const debugModal = document.createElement('div');
+            debugModal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+            debugModal.innerHTML = `
+                <div class="bg-white rounded-lg w-3/4 max-h-3/4 overflow-auto p-4">
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h3 class="text-lg font-medium">Raw Visualization Data</h3>
+                        <button class="text-gray-500 hover:text-gray-700" onclick="this.parentNode.parentNode.parentNode.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <pre class="text-xs overflow-auto p-2 bg-gray-100 rounded">${JSON.stringify(JSON.parse(window._rawPlotData), null, 2)}</pre>
+                </div>
+            `;
+            document.body.appendChild(debugModal);
+        }
+    }
+    
+    // Save visualization
+    function saveVisualization() {
+        // Get visualization parameters from form
+        const params = getVisualizationParams();
+        
+        // Send request to save visualization
+        fetch('/api/visualization/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                experiment_id: "{{ experiment.id }}",
+                dataset_id: currentDataset,
+                viz_type: currentVizType,
+                params: params,
+                title: params.title || `${currentVizType.replace('_', ' ').title()} Visualization`
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Visualization saved successfully!');
+                
+                // Refresh the visualization gallery
+                loadVisualizationGallery();
+            } else {
+                alert('Error saving visualization: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving visualization');
+        });
+    }
+    
+    // Get visualization parameters from form
+    function getVisualizationParams() {
+        const params = {};
+        
+        // Get all option inputs
+        const inputs = document.querySelectorAll('#vizOptions input, #vizOptions select');
+        
+        inputs.forEach(input => {
+            const name = input.name;
+            let value;
+            
+            if (input.type === 'checkbox') {
+                value = input.checked;
+            } else if (input.type === 'number') {
+                value = input.value ? parseFloat(input.value) : null;
+            } else if (input.multiple) {
+                value = Array.from(input.selectedOptions).map(option => option.value);
+            } else {
+                value = input.value;
+            }
+            
+            // Only include non-empty values
+            if (value !== null && value !== '' && (Array.isArray(value) ? value.length > 0 : true)) {
+                params[name] = value;
+            }
+        });
+        
+        return params;
+    }
+    
+    // Load visualization gallery
+    function loadVisualizationGallery() {
+        const galleryContainer = document.getElementById('visualizationGallery');
+        
+        // Show loading state
+        galleryContainer.innerHTML = '<div class="col-span-full flex justify-center py-8"><i class="fas fa-spinner fa-spin text-indigo-500 mr-2"></i> Loading visualizations...</div>';
+        
+        // Fetch visualizations for this experiment
+        fetch(`/api/experiment/{{ experiment.id }}/visualizations`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.visualizations.length > 0) {
+                    galleryContainer.innerHTML = '';
+                    
+                    data.visualizations.forEach(viz => {
+                        const vizCard = document.createElement('div');
+                        vizCard.className = 'bg-white overflow-hidden shadow rounded-lg border border-gray-200';
+                        
+                        vizCard.innerHTML = `
+                            <div class="px-4 py-5 sm:p-6">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">${viz.title}</h3>
+                                <p class="mt-1 max-w-2xl text-sm text-gray-500">${viz.viz_type.replace('_', ' ').title()}</p>
+                                <div class="mt-2 h-40 bg-gray-50 rounded flex items-center justify-center viz-thumbnail" data-id="${viz.id}">
+                                    <i class="fas fa-chart-line text-3xl text-gray-300"></i>
+                                </div>
+                                <div class="mt-3 flex items-center text-sm text-gray-500">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <span>${new Date(viz.created_at).toLocaleDateString()}</span>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-4 sm:px-6 flex justify-between">
+                                <button class="view-viz-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" data-id="${viz.id}">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </button>
+                                <button class="delete-viz-btn inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" data-id="${viz.id}">
+                                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                                </button>
+                            </div>
+                        `;
+                        
+                        galleryContainer.appendChild(vizCard);
+                        
+                        // Load thumbnail for this visualization
+                        loadVisualizationThumbnail(viz.id);
+                    });
+                    
+                    // Attach event listeners to buttons
+                    attachGalleryEventListeners();
+                } else {
+                    galleryContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-60 bg-gray-50 rounded-lg border border-gray-200 text-center p-4 col-span-full">
+                            <i class="fas fa-images text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No visualizations saved yet</p>
+                            <p class="text-sm text-gray-400 mt-2">Create and save visualizations to see them here</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading visualizations:', error);
+                galleryContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-60 bg-gray-50 rounded-lg border border-gray-200 text-center p-4 col-span-full">
+                        <i class="fas fa-exclamation-circle text-4xl text-red-300 mb-3"></i>
+                        <p class="text-red-500">Error loading visualizations</p>
+                        <p class="text-sm text-gray-400 mt-2">Please try again later</p>
+                    </div>
+                `;
+            });
+    }
+    
+    // Load visualization thumbnails with improved parsing
+    function loadVisualizationThumbnail(vizId) {
+        // Fetch visualization data for thumbnail
+        fetch(`/api/visualization/${vizId}/thumbnail`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const thumbnailContainer = document.querySelector(`.viz-thumbnail[data-id="${vizId}"]`);
+                    
+                    if (thumbnailContainer) {
+                        // Clear loading indicator
+                        thumbnailContainer.innerHTML = '';
+                        
+                        try {
+                            // Parse plot data - handle both string and object
+                            let plotData;
+                            if (typeof data.plot === 'string') {
+                                plotData = JSON.parse(data.plot);
+                            } else {
+                                plotData = data.plot;
+                            }
+                            
+                            // Check that we have valid plot data
+                            if (!plotData || !plotData.data) {
+                                throw new Error('Invalid plot data structure');
+                            }
+                            
+                            // Add custom layout options for thumbnail
+                            const thumbnailLayout = Object.assign({}, plotData.layout || {}, {
+                                margin: {t: 15, l: 15, r: 15, b: 15},
+                                showlegend: false,
+                                height: 160,
+                                width: 240
+                            });
+                            
+                            // Render thumbnail
+                            Plotly.newPlot(thumbnailContainer, 
+                                plotData.data, 
+                                thumbnailLayout,
+                                {staticPlot: true, displayModeBar: false}
+                            );
+                        } catch (err) {
+                            console.error('Error rendering thumbnail:', err);
+                            thumbnailContainer.innerHTML = '<div class="flex items-center justify-center h-full"><i class="fas fa-exclamation-triangle text-red-500"></i></div>';
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading thumbnail:', error);
+            });
+    }
+    
+    // Attach event listeners to gallery items
+    function attachGalleryEventListeners() {
+        // View visualization buttons
+        document.querySelectorAll('.view-viz-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const vizId = this.dataset.id;
+                window.location.href = `/visualization/${vizId}`;
             });
         });
-    </script>
+        
+        // Delete visualization buttons
+        document.querySelectorAll('.delete-viz-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const vizId = this.dataset.id;
+                
+                if (confirm('Are you sure you want to delete this visualization? This action cannot be undone.')) {
+                    // Send delete request
+                    fetch(`/api/visualization/${vizId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Refresh gallery
+                            loadVisualizationGallery();
+                        } else {
+                            alert('Error deleting visualization: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error deleting visualization');
+                    });
+                }
+            });
+        });
+    }
+    
+    // Load visualization gallery on page load
+    loadVisualizationGallery();
+</script>
 </body>
 </html>
