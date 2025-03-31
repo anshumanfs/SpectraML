@@ -49,12 +49,101 @@
                     <a href="/experiment/{{ experiment.id }}/upload" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                         <i class="fas fa-upload mr-2"></i> Upload Data
                     </a>
+                    <a href="/experiment/{{ experiment.id }}/feature-engineering" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <i class="fas fa-tools mr-2"></i> Feature Engineering
+                    </a>
                     <a href="/experiment/{{ experiment.id }}/visualize" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                         <i class="fas fa-chart-line mr-2"></i> Visualize
                     </a>
                     <a href="/experiment/{{ experiment.id }}/train-model" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                         <i class="fas fa-brain mr-2"></i> Train Model
                     </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Experiment Pipeline Diagram -->
+        <div class="px-4 py-4 sm:px-0 mb-6">
+            <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+                <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Experiment Pipeline
+                    </h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Follow these steps to build your machine learning solution.
+                    </p>
+                </div>
+                <div class="px-4 py-4 sm:px-6">
+                    <div class="flex flex-wrap items-center justify-between">
+                        <!-- Step 1: Data Upload -->
+                        <div class="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-indigo-800 font-bold">1</span>
+                            </div>
+                            <div class="ml-4">
+                                <a href="/experiment/{{ experiment.id }}/upload" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    Upload Dataset
+                                </a>
+                                <p class="text-xs text-gray-500">
+                                    Import your raw data
+                                </p>
+                            </div>
+                        </div>
+                        <div class="hidden sm:block flex-shrink-0 text-gray-400">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        
+                        <!-- Step 2: Feature Engineering -->
+                        <div class="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-indigo-800 font-bold">2</span>
+                            </div>
+                            <div class="ml-4">
+                                <a href="/experiment/{{ experiment.id }}/feature-engineering" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    Feature Engineering
+                                </a>
+                                <p class="text-xs text-gray-500">
+                                    Transform and optimize features
+                                </p>
+                            </div>
+                        </div>
+                        <div class="hidden sm:block flex-shrink-0 text-gray-400">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        
+                        <!-- Step 3: Visualization -->
+                        <div class="flex items-center mb-4 sm:mb-0 w-full sm:w-auto">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-indigo-800 font-bold">3</span>
+                            </div>
+                            <div class="ml-4">
+                                <a href="/experiment/{{ experiment.id }}/visualize" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    Visualize Data
+                                </a>
+                                <p class="text-xs text-gray-500">
+                                    Analyze and explore
+                                </p>
+                            </div>
+                        </div>
+                        <div class="hidden sm:block flex-shrink-0 text-gray-400">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        
+                        <!-- Step 4: Model Training -->
+                        <div class="flex items-center w-full sm:w-auto">
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-indigo-800 font-bold">4</span>
+                            </div>
+                            <div class="ml-4">
+                                <a href="/experiment/{{ experiment.id }}/train-model" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                    Train Models
+                                </a>
+                                <p class="text-xs text-gray-500">
+                                    Build ML models
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -85,9 +174,21 @@
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900">{{ dataset.filename }}</div>
                                                 <div class="text-sm text-gray-500">Added: {{ dataset.created_at|datetime }}</div>
+                                                
+                                                <!-- Show if dataset was created from feature engineering (if metadata exists) -->
+                                                {% set metadata = dataset.metadata|fromjson if dataset.metadata else {} %}
+                                                {% if metadata.source_file %}
+                                                    <div class="text-xs text-blue-600 mt-1">
+                                                        <i class="fas fa-tools mr-1"></i> Derived from {{ metadata.source_file }}
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         <div class="flex space-x-2">
+                                            <!-- Add Feature Engineering button -->
+                                            <a href="/experiment/{{ experiment.id }}/feature-engineering?dataset={{ dataset.id }}" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-emerald-700 bg-emerald-100 hover:bg-emerald-200">
+                                                <i class="fas fa-tools mr-1"></i> Engineer Features
+                                            </a>
                                             <a href="/dataset/{{ dataset.id }}/visualize" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
                                                 <i class="fas fa-chart-bar mr-1"></i> Visualize
                                             </a>
@@ -238,6 +339,61 @@
                             </a>
                         </div>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Engineering Section -->
+        <div class="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Feature Engineering</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Optimize your data for better model performance</p>
+                </div>
+                <a href="/experiment/{{ experiment.id }}/feature-engineering" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+                    <i class="fas fa-cogs mr-1"></i> Feature Engineering
+                </a>
+            </div>
+            <div class="border-t border-gray-200">
+                <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <div class="sm:col-span-1">
+                        <div class="flex items-center mb-2">
+                            <div class="p-2 rounded-md bg-blue-100 text-blue-500">
+                                <i class="fas fa-filter"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium">Data Filtering</h3>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Remove outliers and irrelevant data points</p>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <div class="flex items-center mb-2">
+                            <div class="p-2 rounded-md bg-green-100 text-green-500">
+                                <i class="fas fa-random"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium">Feature Transformation</h3>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Scale, normalize, and encode features</p>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <div class="flex items-center mb-2">
+                            <div class="p-2 rounded-md bg-purple-100 text-purple-500">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium">Feature Creation</h3>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Generate new features from existing data</p>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <a href="/experiment/{{ experiment.id }}/feature-engineering" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Start Feature Engineering
+                    </a>
                 </div>
             </div>
         </div>
@@ -464,7 +620,11 @@
                     if (aIsRegression && !bIsRegression) return -1;
                     if (!aIsRegression && bIsRegression) return 1;
                     
-                    return parseFloat(b.dataset.r2 || 0) - parseFloat(a.dataset.r2 || 0);
+                    // Parse R2 values (handle NaN or missing values)
+                    const aR2 = parseFloat(a.dataset.r2 || 0);
+                    const bR2 = parseFloat(b.dataset.r2 || 0);
+                    
+                    return bR2 - aR2; // Higher R2 first
                 } else if (sortValue === 'rmse-asc') {
                     // Lower RMSE is better (ascending order)
                     // Only consider regression models for RMSE
@@ -475,8 +635,11 @@
                     if (aIsRegression && !bIsRegression) return -1;
                     if (!aIsRegression && bIsRegression) return 1;
                     
-                    // Higher values go later (ascending sort)
-                    return parseFloat(a.dataset.rmse || 9999) - parseFloat(b.dataset.rmse || 9999);
+                    // Parse RMSE values (handle NaN or missing values)
+                    const aRMSE = parseFloat(a.dataset.rmse || 9999);
+                    const bRMSE = parseFloat(b.dataset.rmse || 9999);
+                    
+                    return aRMSE - bRMSE; // Lower RMSE first
                 }
                 return 0;
             });

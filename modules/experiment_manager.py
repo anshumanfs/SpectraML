@@ -388,29 +388,25 @@ class ExperimentManager:
             
         Returns:
         --------
-        dict
-            Model data
+        dict or None
+            Model information or None if not found
         """
-        conn = self.get_db_connection()
-        
-        # Get model
-        model = conn.execute("SELECT * FROM models WHERE id = ?", (model_id,)).fetchone()
-        
-        if not model:
+        try:
+            conn = self.get_db_connection()
+            model = conn.execute(
+                "SELECT * FROM models WHERE id = ?", 
+                (model_id,)
+            ).fetchone()
             conn.close()
+            
+            if model:
+                # Convert SQLite row to dict
+                model_dict = dict(model)
+                return model_dict
             return None
-        
-        # Convert to dict
-        model_dict = dict(model)
-        
-        # Parse metrics and config if they exist
-        if model_dict['metrics']:
-            model_dict['metrics'] = json.loads(model_dict['metrics'])
-        if model_dict['config']:
-            model_dict['config'] = json.loads(model_dict['config'])
-        
-        conn.close()
-        return model_dict
+        except Exception as e:
+            print(f"Error getting model: {str(e)}")
+            return None
         
     def delete_dataset(self, experiment_id, dataset_id):
         """
