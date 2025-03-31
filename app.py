@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, flash, redirect
+from flask import Flask, render_template, request, jsonify, session, flash, redirect, url_for
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import sqlite3
@@ -6,6 +6,8 @@ import uuid
 import os
 import json
 import logging
+import markdown
+import re
 
 from modules.data_loader import DataLoader
 from modules.visualization import Visualizer
@@ -19,6 +21,10 @@ app.secret_key = os.urandom(24)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['DATABASE'] = 'datalab.db'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Ensure upload and storage directories exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -528,6 +534,211 @@ def save_visualization():
             'success': False,
             'error': str(e)
         })
+
+# Add the following utility function to convert markdown links to proper URL paths
+def fix_markdown_links(content, current_file=None):
+    """
+    Converts relative markdown links to proper Flask route links
+    
+    Args:
+        content (str): The markdown content
+        current_file (str): The current file name (without .md extension)
+        
+    Returns:
+        str: Updated content with fixed links
+    """
+    import re
+    
+    # Replace links like [text](file.md) with [text](/ml-guide/file)
+    # But don't modify external links with http:// or https://
+    pattern = r'\[([^\]]+)\]\((?!http)(.*?)\.md\)'
+    
+    def replace_link(match):
+        text = match.group(1)
+        link = match.group(2)
+        
+        # Skip if it's already an absolute URL
+        if link.startswith('/'):
+            return f'[{text}]({link})'
+        
+        # Handle index specially
+        if link == 'index':
+            return f'[{text}](/ml-guide)'
+        
+        # Make the link absolute
+        return f'[{text}](/ml-guide/{link})'
+    
+    # Apply the regex replacement
+    updated_content = re.sub(pattern, replace_link, content)
+    
+    return updated_content
+
+@app.route('/ml-guide')
+@app.route('/ml-guide/')
+def ml_guide_index():
+    """Render the machine learning guide index"""
+    try:
+        # Path to the index markdown file
+        docs_dir = os.path.join(app.root_path, 'docs')
+        logger.info(f"Looking for markdown files in: {docs_dir}")
+        
+        # Make sure docs directory exists
+        if not os.path.exists(docs_dir):
+            logger.error(f"Documentation directory not found: {docs_dir}")
+            flash("Documentation directory not found.", 'error')
+            return redirect('/')
+        
+        # List available markdown files for debugging
+        available_files = [f for f in os.listdir(docs_dir) if f.endswith('.md')]
+        logger.info(f"Available markdown files: {available_files}")
+        
+        md_file_path = os.path.join(docs_dir, 'index.md')
+        
+        # If the index doesn't exist, try the legacy single file or a fallback
+        if not os.path.exists(md_file_path):
+            logger.warning(f"Index file not found: {md_file_path}")
+            
+            # Try ml_guide.md as fallback
+            ml_guide_path = os.path.join(docs_dir, 'ml_guide.md')
+            if os.path.exists(ml_guide_path):
+                logger.info(f"Using ml_guide.md as fallback")
+                md_file_path = ml_guide_path
+            else:
+                # If no markdown files exist, create a simple one
+                if not available_files:
+                    logger.warning("No markdown files found. Creating a placeholder.")
+                    with open(md_file_path, 'w') as f:
+                        f.write("# Machine Learning Guide\n\nWelcome to the SpectraML Machine Learning Guide. This documentation is currently under development.")
+                else:
+                    # Use the first available markdown file
+                    md_file_path = os.path.join(docs_dir, available_files[0])
+                    logger.info(f"Using first available file as fallback: {available_files[0]}")
+            
+        # Read the markdown file
+        logger.info(f"Reading markdown file: {md_file_path}")
+        with open(md_file_path, 'r', encoding='utf-8') as f:
+            md_content = f.read()
+        
+        # Fix the links in the content
+        md_content = fix_markdown_links(md_content, 'index')
+        
+        # Convert markdown to HTML
+        logger.info("Converting markdown to HTML")
+        html_content = markdown.markdown(
+            md_content,
+            extensions=['tables', 'fenced_code', 'codehilite', 'toc']
+        )
+        
+        # Get guide files for navigation
+        guide_files = []
+        for file in available_files:
+            if file != 'index.md' and file != 'ml_guide.md':
+                name = file[:-3]  # Remove .md extension
+                title = name.replace('_', ' ').title()
+                guide_files.append({'name': name, 'title': title, 'file': file})
+        
+        # Sort guide files in a logical order
+        file_order = [
+            'introduction', 'feature_engineering', 'model_selection', 
+            'model_evaluation', 'deep_learning', 'spectral_data', 
+            'advanced_topics', 'best_practices', 'glossary', 
+            'code_examples', 'references'
+        ]
+        guide_files.sort(key=lambda x: file_order.index(x['name']) if x['name'] in file_order else 999)
+        
+        logger.info(f"Found {len(guide_files)} guide files for navigation")
+        
+        # Render template with HTML content
+        current_file = 'index'
+        if md_file_path.endswith('ml_guide.md'):
+            current_file = 'ml_guide'
+            
+        return render_template('markdown_view.html', 
+                               title='Machine Learning Guide',
+                               content=html_content,
+                               guide_files=guide_files,
+                               current_file=current_file,
+                               debug_info={'app_root': app.root_path, 'docs_dir': docs_dir, 'md_file': md_file_path})
+    except Exception as e:
+        logger.error(f"Error rendering ML guide index: {str(e)}", exc_info=True)
+        flash(f"Error loading guide: {str(e)}", 'error')
+        return redirect('/ml-guide')
+
+@app.route('/ml-guide/<guide_file>')
+def ml_guide_page(guide_file):
+    """Render a specific machine learning guide page"""
+    try:
+        # Make sure the filename is safe
+        guide_file = guide_file.replace('..', '').replace('/', '')
+        
+        # Add .md extension if not already present
+        if not guide_file.endswith('.md'):
+            guide_file = f"{guide_file}.md"
+            
+        # Path to the markdown file
+        docs_dir = os.path.join(app.root_path, 'docs')
+        md_file_path = os.path.join(docs_dir, guide_file)
+        
+        logger.info(f"Looking for guide file: {md_file_path}")
+        
+        # Check if file exists
+        if not os.path.exists(md_file_path):
+            logger.warning(f"Guide page not found: {md_file_path}")
+            
+            # List available markdown files for debugging
+            available_files = [f for f in os.listdir(docs_dir) if f.endswith('.md')]
+            logger.info(f"Available markdown files: {available_files}")
+            
+            flash(f"Guide page not found: {guide_file}", 'error')
+            return redirect('/ml-guide')
+        
+        # Read the markdown file
+        with open(md_file_path, 'r', encoding='utf-8') as f:
+            md_content = f.read()
+        
+        # Fix the links in the content
+        md_content = fix_markdown_links(md_content, guide_file[:-3] if guide_file.endswith('.md') else guide_file)
+        
+        # Convert markdown to HTML
+        html_content = markdown.markdown(
+            md_content,
+            extensions=['tables', 'fenced_code', 'codehilite', 'toc']
+        )
+        
+        # Get all guide files for navigation
+        guide_files = []
+        for file in os.listdir(docs_dir):
+            if file.endswith('.md') and file != 'index.md' and file != 'ml_guide.md':
+                name = file[:-3]  # Remove .md extension
+                title = name.replace('_', ' ').title()
+                guide_files.append({'name': name, 'title': title, 'file': file})
+        
+        # Sort guide files in a logical order
+        file_order = [
+            'introduction', 'feature_engineering', 'model_selection', 
+            'model_evaluation', 'deep_learning', 'spectral_data', 
+            'advanced_topics', 'best_practices', 'glossary', 
+            'code_examples', 'references'
+        ]
+        guide_files.sort(key=lambda x: file_order.index(x['name']) if x['name'] in file_order else 999)
+        
+        # Get the title from heading if possible
+        title = guide_file[:-3].replace('_', ' ').title()
+        heading_match = re.search(r'^# (.+)$', md_content, re.MULTILINE)
+        if heading_match:
+            title = heading_match.group(1)
+        
+        # Render template with HTML content
+        return render_template('markdown_view.html', 
+                              title=title,
+                              content=html_content,
+                              guide_files=guide_files,
+                              current_file=guide_file[:-3],  # Remove .md for comparison
+                              debug_info={'app_root': app.root_path, 'docs_dir': docs_dir, 'md_file': md_file_path})
+    except Exception as e:
+        logger.error(f"Error rendering ML guide page: {str(e)}", exc_info=True)
+        flash(f"Error loading guide page: {str(e)}", 'error')
+        return redirect('/ml-guide')
 
 # Create a custom Jinja2 filter for datetime formatting
 @app.template_filter('datetime')

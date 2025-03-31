@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpectraML - Data Science Platform</title>
+    <title>SpectraML - Machine Learning for Spectral Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body class="bg-gray-50">
@@ -18,154 +17,250 @@
                         <span class="text-white text-2xl font-bold">SpectraML</span>
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="/" class="border-indigo-500 text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="/" class="border-indigo-200 text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Dashboard
                         </a>
                         <a href="/experiments" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Experiments
                         </a>
+                        <a href="/ml-guide" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            ML Guide
+                        </a>
                     </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <button class="p-1 rounded-full text-gray-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-600 focus:ring-white">
+                        <span class="sr-only">View notifications</span>
+                        <i class="fas fa-bell text-xl"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <!-- Header Section -->
-        <div class="px-4 py-6 sm:px-0">
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="p-6">
-                    <h1 class="text-3xl font-bold text-gray-900">Welcome to SpectraML</h1>
-                    <p class="mt-2 text-lg text-gray-600">
-                        A comprehensive platform for data analysis, visualization, and machine learning.
-                    </p>
-                </div>
-                <div class="bg-indigo-50 p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-4 rounded-lg shadow-md">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-indigo-500 text-white">
-                                    <i class="fas fa-flask text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h2 class="text-lg font-semibold">Create Experiment</h2>
-                                    <p class="text-gray-600">Start a new analysis</p>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <a href="/experiment/new" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                    Create New
-                                </a>
-                            </div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-md">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-green-500 text-white">
-                                    <i class="fas fa-list text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h2 class="text-lg font-semibold">View Experiments</h2>
-                                    <p class="text-gray-600">Browse existing experiments</p>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <a href="/experiments" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                                    View All
-                                </a>
-                            </div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-md">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-purple-500 text-white">
-                                    <i class="fas fa-image text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h2 class="text-lg font-semibold">Image Analysis</h2>
-                                    <p class="text-gray-600">Analyze and process images</p>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <a href="/image-analysis" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
-                                    Start Analysis
-                                </a>
-                            </div>
-                        </div>
+    <!-- Hero section -->
+    <div class="bg-gradient-to-r from-indigo-800 to-indigo-500 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <div class="text-center">
+                <h1 class="text-4xl font-extrabold sm:text-5xl md:text-6xl">
+                    <span class="block">Machine Learning for</span>
+                    <span class="block text-indigo-200">Spectral Data Analysis</span>
+                </h1>
+                <p class="mt-3 max-w-md mx-auto text-base text-indigo-100 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+                    Build, train, and deploy machine learning models for spectral data analysis with an intuitive workflow.
+                </p>
+                <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+                    <div class="rounded-md shadow">
+                        <a href="/experiments" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+                            Get Started
+                        </a>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Features Section -->
-        <div class="px-4 py-6 sm:px-0">
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="p-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Platform Features</h2>
-                    <p class="mt-2 text-lg text-gray-600">
-                        Explore the powerful capabilities of SpectraML
-                    </p>
-                </div>
-                <div class="border-t border-gray-200">
-                    <dl>
-                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt class="text-sm font-medium text-gray-500">Data Loading</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                Support for CSV, XLSX, and JSON files with automatic schema detection
-                            </dd>
-                        </div>
-                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt class="text-sm font-medium text-gray-500">Visualization</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                Interactive Plotly-based charts including scatter plots, histograms, box plots, and more
-                            </dd>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt class="text-sm font-medium text-gray-500">Feature Engineering</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                Advanced tools for data transformation, scaling, encoding, and dimensionality reduction
-                            </dd>
-                        </div>
-                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt class="text-sm font-medium text-gray-500">Machine Learning</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                Classification, regression, and ensemble models with hyperparameter tuning
-                            </dd>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt class="text-sm font-medium text-gray-500">Deep Learning</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                TensorFlow and PyTorch integration for neural network training and inference
-                            </dd>
-                        </div>
-                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt class="text-sm font-medium text-gray-500">Image Analysis</dt>
-                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                Object detection, face recognition, image classification, and segmentation
-                            </dd>
-                        </div>
-                    </dl>
+                    <div class="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                        <a href="/ml-guide" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
+                            Learn ML Basics
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-white">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
-            <div class="flex justify-center space-x-6 md:order-2">
-                <a href="#" class="text-gray-400 hover:text-gray-500">
-                    <span class="sr-only">GitHub</span>
-                    <i class="fab fa-github text-xl"></i>
-                </a>
-                <a href="#" class="text-gray-400 hover:text-gray-500">
-                    <span class="sr-only">Twitter</span>
-                    <i class="fab fa-twitter text-xl"></i>
+    <!-- Features section -->
+    <div class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Features</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    A better way to analyze spectral data
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    SpectraML provides a comprehensive environment for applying machine learning to spectral data analysis.
+                </p>
+            </div>
+
+            <div class="mt-10">
+                <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Data Management</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Easily upload, visualize, and manage your spectral datasets with intuitive tools.
+                        </dd>
+                    </div>
+
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Feature Engineering</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Transform and optimize your data with specialized feature engineering tools for spectral analysis.
+                        </dd>
+                    </div>
+
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Model Training</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Train machine learning models with just a few clicks and automatic hyperparameter tuning.
+                        </dd>
+                    </div>
+
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Visualization</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Create interactive visualizations to gain insights from your data and model predictions.
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- ML Guide Section -->
+    <div class="py-12 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Learning Resources</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Machine Learning Guide
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    New to machine learning? Our comprehensive guide will help you understand the basics and advanced concepts.
+                </p>
+            </div>
+
+            <div class="mt-10 bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3">
+                    <div class="p-8 md:border-r border-gray-200">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white mb-4">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">ML Fundamentals</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Learn the core concepts of machine learning, from basic algorithms to evaluation metrics.
+                        </p>
+                        <a href="/ml-guide#machine-learning-basics" class="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-500">
+                            Explore fundamentals <span class="ml-1">→</span>
+                        </a>
+                    </div>
+
+                    <div class="p-8 md:border-r border-gray-200">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white mb-4">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Feature Engineering</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Master the art of transforming raw data into meaningful features for better model performance.
+                        </p>
+                        <a href="/ml-guide#feature-engineering" class="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-500">
+                            Learn techniques <span class="ml-1">→</span>
+                        </a>
+                    </div>
+
+                    <div class="p-8">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white mb-4">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Deep Learning</h3>
+                        <p class="mt-2 text-base text-gray-500">
+                            Dive into neural networks and advanced deep learning architectures for complex problems.
+                        </p>
+                        <a href="/ml-guide#deep-learning-fundamentals" class="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-500">
+                            Explore deep learning <span class="ml-1">→</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 p-6 text-center">
+                    <p class="text-white text-lg font-medium">Ready to expand your knowledge?</p>
+                    <a href="/ml-guide" class="mt-4 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50">
+                        Access Full ML Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent experiments section -->
+    <div class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center mb-10">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Dashboard</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Recent Experiments
+                </p>
+            </div>
+            
+            <!-- Placeholder for recent experiments, would be filled by Flask in real app -->
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {% for i in range(3) %}
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900">Example Experiment {{ i+1 }}</h3>
+                        <p class="mt-1 text-sm text-gray-500">Created on January {{ i+10 }}, 2023</p>
+                        <div class="mt-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-100 text-green-800">
+                                {{ i+2 }} models
+                            </span>
+                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
+                                {{ i+1 }} datasets
+                            </span>
+                        </div>
+                        <div class="mt-6">
+                            <a href="#" class="text-indigo-600 hover:text-indigo-500">View details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-10 text-center">
+                <a href="/experiments" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    View All Experiments
                 </a>
             </div>
-            <div class="mt-8 md:mt-0 md:order-1">
-                <p class="text-center text-base text-gray-400">
-                    &copy; 2025 SpectraML. All rights reserved.
-                </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex justify-center space-x-6 md:order-2">
+                    <a href="#" class="text-gray-400 hover:text-gray-300">
+                        <span class="sr-only">GitHub</span>
+                        <i class="fab fa-github text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-gray-300">
+                        <span class="sr-only">Twitter</span>
+                        <i class="fab fa-twitter text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-gray-300">
+                        <span class="sr-only">LinkedIn</span>
+                        <i class="fab fa-linkedin text-xl"></i>
+                    </a>
+                </div>
+                <div class="mt-8 md:mt-0 md:order-1">
+                    <p class="text-center text-base text-gray-400">
+                        &copy; 2025 SpectraML. All rights reserved.
+                    </p>
+                </div>
             </div>
         </div>
     </footer>
