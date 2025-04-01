@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Add these styles to the head section */
+        .dataset-card {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .dataset-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .dataset-card.selected {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+    </style>
 </head>
+
 <body class="bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-indigo-600 shadow-md">
@@ -18,16 +36,19 @@
                         <span class="text-white text-2xl font-bold">SpectraML</span>
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="/" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="/"
+                            class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Dashboard
                         </a>
-                        <a href="/experiments" class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="/experiments"
+                            class="border-transparent text-gray-200 hover:border-gray-300 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Experiments
                         </a>
                     </div>
                 </div>
                 <div class="flex items-center">
-                    <a href="/experiment/{{ experiment.id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
+                    <a href="/experiment/{{ experiment.id }}"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
                         <i class="fas fa-arrow-left mr-2"></i> Back to Experiment
                     </a>
                 </div>
@@ -53,39 +74,43 @@
                 <div class="px-4 py-5 sm:p-6">
                     <h2 class="text-lg font-medium text-gray-900">Step 1: Select a Dataset</h2>
                     {% if datasets %}
-                        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {% for dataset in datasets %}
-                            <div class="dataset-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-id="{{ dataset.id }}" data-filename="{{ dataset.filename }}">
-                                <div class="flex items-center">
-                                    <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
-                                        <i class="fas fa-table"></i>
-                                    </div>
-                                    <div class="ml-4">
-                                        <h3 class="text-md font-medium">{{ dataset.filename }}</h3>
-                                        <p class="text-sm text-gray-500">Type: {{ dataset.filetype }}</p>
-                                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {% for dataset in datasets %}
+                        <div class="dataset-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer"
+                            data-id="{{ dataset.id }}" data-filename="{{ dataset.filename }}">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
+                                    <i class="fas fa-table"></i>
                                 </div>
-                                <div class="mt-2 flex justify-end">
-                                    <button class="preview-dataset-btn px-2 py-1 text-xs text-green-600 hover:text-green-900 focus:outline-none" data-id="{{ dataset.id }}">
-                                        <i class="fas fa-eye mr-1"></i> Preview
-                                    </button>
+                                <div class="ml-4">
+                                    <h3 class="text-md font-medium">{{ dataset.filename }}</h3>
+                                    <p class="text-sm text-gray-500">Type: {{ dataset.filetype }}</p>
                                 </div>
                             </div>
-                            {% endfor %}
+                            <div class="mt-2 flex justify-end">
+                                <button
+                                    class="preview-dataset-btn px-2 py-1 text-xs text-green-600 hover:text-green-900 focus:outline-none"
+                                    data-id="{{ dataset.id }}">
+                                    <i class="fas fa-eye mr-1"></i> Preview
+                                </button>
+                            </div>
                         </div>
+                        {% endfor %}
+                    </div>
                     {% else %}
-                        <div class="text-center py-10">
-                            <i class="fas fa-database text-5xl text-gray-300 mb-3"></i>
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">No datasets available</h3>
-                            <p class="mt-1 max-w-2xl text-sm text-gray-500 mx-auto">
-                                Upload a dataset first before training a model.
-                            </p>
-                            <div class="mt-5">
-                                <a href="/experiment/{{ experiment.id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
-                                    <i class="fas fa-upload mr-2"></i> Back to Experiment
-                                </a>
-                            </div>
+                    <div class="text-center py-10">
+                        <i class="fas fa-database text-5xl text-gray-300 mb-3"></i>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">No datasets available</h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500 mx-auto">
+                            Upload a dataset first before training a model.
+                        </p>
+                        <div class="mt-5">
+                            <a href="/experiment/{{ experiment.id }}"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                <i class="fas fa-upload mr-2"></i> Back to Experiment
+                            </a>
                         </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -97,7 +122,8 @@
                 <div class="px-4 py-5 sm:p-6">
                     <h2 class="text-lg font-medium text-gray-900">Step 2: Select Model Type</h2>
                     <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div class="model-type-card border rounded-lg p-4 hover:bg-blue-50 cursor-pointer" data-type="logistic_regression">
+                        <div class="model-type-card border rounded-lg p-4 hover:bg-blue-50 cursor-pointer"
+                            data-type="logistic_regression">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-blue-100 text-blue-800">
                                     <i class="fas fa-chart-line"></i>
@@ -108,7 +134,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="model-type-card border rounded-lg p-4 hover:bg-green-50 cursor-pointer" data-type="linear_regression">
+                        <div class="model-type-card border rounded-lg p-4 hover:bg-green-50 cursor-pointer"
+                            data-type="linear_regression">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-green-100 text-green-800">
                                     <i class="fas fa-chart-line"></i>
@@ -119,7 +146,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="model-type-card border rounded-lg p-4 hover:bg-purple-50 cursor-pointer" data-type="random_forest_classifier">
+                        <div class="model-type-card border rounded-lg p-4 hover:bg-purple-50 cursor-pointer"
+                            data-type="random_forest_classifier">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-purple-100 text-purple-800">
                                     <i class="fas fa-tree"></i>
@@ -130,7 +158,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="model-type-card border rounded-lg p-4 hover:bg-purple-50 cursor-pointer" data-type="random_forest_regressor">
+                        <div class="model-type-card border rounded-lg p-4 hover:bg-purple-50 cursor-pointer"
+                            data-type="random_forest_regressor">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-purple-100 text-purple-800">
                                     <i class="fas fa-tree"></i>
@@ -141,7 +170,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="model-type-card border rounded-lg p-4 hover:bg-yellow-50 cursor-pointer" data-type="gradient_boosting">
+                        <div class="model-type-card border rounded-lg p-4 hover:bg-yellow-50 cursor-pointer"
+                            data-type="gradient_boosting">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-yellow-100 text-yellow-800">
                                     <i class="fas fa-bolt"></i>
@@ -152,7 +182,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="model-type-card border rounded-lg p-4 hover:bg-red-50 cursor-pointer" data-type="stacking_classifier">
+                        <div class="model-type-card border rounded-lg p-4 hover:bg-red-50 cursor-pointer"
+                            data-type="stacking_classifier">
                             <div class="flex items-center">
                                 <div class="p-3 rounded-md bg-red-100 text-red-800">
                                     <i class="fas fa-layer-group"></i>
@@ -173,7 +204,7 @@
             <div class="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
                     <h2 class="text-lg font-medium text-gray-900">Step 3: Configure Model</h2>
-                    
+
                     <!-- Dataset Column Preview -->
                     <div id="columnPreviewSection" class="mt-4 border rounded-lg p-4 bg-gray-50">
                         <h3 class="text-md font-medium text-gray-900 mb-3">Dataset Columns</h3>
@@ -182,42 +213,47 @@
                             <div class="text-sm text-gray-500">Select a dataset first to see columns</div>
                         </div>
                     </div>
-                    
+
                     <form id="trainingForm" class="mt-4">
                         <input type="hidden" id="selectedDataset" name="selectedDataset" value="">
                         <input type="hidden" id="selectedModelType" name="selectedModelType" value="">
-                        
+
                         <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                             <div class="sm:col-span-3">
-                                <label for="modelName" class="block text-sm font-medium text-gray-700">Model Name</label>
+                                <label for="modelName" class="block text-sm font-medium text-gray-700">Model
+                                    Name</label>
                                 <input type="text" name="modelName" id="modelName" required
                                     class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                     placeholder="Model name">
                             </div>
 
                             <div class="sm:col-span-3">
-                                <label for="targetColumn" class="block text-sm font-medium text-gray-700">Target Column</label>
+                                <label for="targetColumn" class="block text-sm font-medium text-gray-700">Target
+                                    Column</label>
                                 <select id="targetColumn" name="targetColumn" required
                                     class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                     <option value="">Select Target Column</option>
                                     <!-- Target column options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <!-- Feature Selection -->
                             <div class="sm:col-span-6">
                                 <fieldset>
                                     <legend class="block text-sm font-medium text-gray-700">Feature Columns</legend>
                                     <div class="mt-2 border rounded-md p-4">
                                         <div class="flex justify-between mb-3">
-                                            <button type="button" id="selectAllFeatures" class="text-sm text-indigo-600 hover:text-indigo-900">
+                                            <button type="button" id="selectAllFeatures"
+                                                class="text-sm text-indigo-600 hover:text-indigo-900">
                                                 Select All
                                             </button>
-                                            <button type="button" id="deselectAllFeatures" class="text-sm text-indigo-600 hover:text-indigo-900">
+                                            <button type="button" id="deselectAllFeatures"
+                                                class="text-sm text-indigo-600 hover:text-indigo-900">
                                                 Deselect All
                                             </button>
                                         </div>
-                                        <div id="featureColumnsContainer" class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 max-h-60 overflow-y-auto">
+                                        <div id="featureColumnsContainer"
+                                            class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 max-h-60 overflow-y-auto">
                                             <!-- Feature column checkboxes will be populated dynamically -->
                                             <div class="text-sm text-gray-500">Select a dataset first</div>
                                         </div>
@@ -227,7 +263,8 @@
 
                             <div class="sm:col-span-3">
                                 <label for="testSize" class="block text-sm font-medium text-gray-700">Test Size</label>
-                                <select id="testSize" name="testSize" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <select id="testSize" name="testSize"
+                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                                     <option value="0.2">20%</option>
                                     <option value="0.25">25%</option>
                                     <option value="0.3">30%</option>
@@ -236,7 +273,8 @@
                             </div>
 
                             <div class="sm:col-span-3">
-                                <label for="randomState" class="block text-sm font-medium text-gray-700">Random State</label>
+                                <label for="randomState" class="block text-sm font-medium text-gray-700">Random
+                                    State</label>
                                 <input type="number" name="randomState" id="randomState" value="42"
                                     class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
@@ -247,7 +285,8 @@
                             </div>
 
                             <div class="sm:col-span-6">
-                                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <button type="submit"
+                                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     Train Model
                                 </button>
                             </div>
@@ -298,10 +337,12 @@
                         </div>
 
                         <div class="mt-5 flex justify-end space-x-3">
-                            <a href="/experiment/{{ experiment.id }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            <a href="/experiment/{{ experiment.id }}"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                                 Return to Experiment
                             </a>
-                            <button id="trainNewModelBtn" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            <button id="trainNewModelBtn"
+                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                                 Train Another Model
                             </button>
                         </div>
@@ -318,7 +359,8 @@
                 <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
+            <div
+                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
                 <div>
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
                         <i class="fas fa-table text-green-600"></i>
@@ -334,12 +376,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="previewLoading" class="py-10 text-center">
                     <i class="fas fa-spinner fa-spin text-4xl text-indigo-500 mb-3"></i>
                     <p class="text-gray-600">Loading data preview, please wait...</p>
                 </div>
-                
+
                 <div id="previewContent" class="mt-5 hidden">
                     <div class="border rounded-lg overflow-hidden">
                         <div class="overflow-x-auto">
@@ -356,9 +398,10 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="mt-5 sm:mt-6">
-                    <button type="button" id="closePreviewModal" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+                    <button type="button" id="closePreviewModal"
+                        class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
                         Close
                     </button>
                 </div>
@@ -392,56 +435,89 @@
         let selectedDatasetFilename = '';
         let currentDatasetColumns = [];
         let selectedFeatureColumns = [];
-        
+
+        // Initialize from the Flask template
+        let datasetsList = [];
+        try {
+            // Get datasets as a JavaScript object directly
+            datasetsList = {{ datasets | tojson | safe }};
+        } catch (error) {
+            console.error("Error initializing datasets:", error);
+            datasetsList = [];
+        }
+
         // Handle dataset selection
         document.querySelectorAll('.dataset-card').forEach(card => {
-            card.addEventListener('click', function() {
+            card.addEventListener('click', function (e) {
+                console.log('Dataset card clicked:', this.dataset.id);
+
                 // Update visual selection
-                document.querySelectorAll('.dataset-card').forEach(c => 
-                    c.classList.remove('ring-2', 'ring-indigo-500'));
-                this.classList.add('ring-2', 'ring-indigo-500');
-                
+                document.querySelectorAll('.dataset-card').forEach(c =>
+                    c.classList.remove('ring-2', 'ring-indigo-500', 'selected'));
+                this.classList.add('ring-2', 'ring-indigo-500', 'selected');
+
                 // Store selected dataset
                 const datasetId = this.dataset.id;
                 const filename = this.dataset.filename;
+                console.log('Selected dataset:', datasetId, filename);
                 selectedDatasetFilename = filename;
                 document.getElementById('selectedDataset').value = filename;
-                
+
                 // Clear existing column data
                 document.getElementById('targetColumn').innerHTML = '<option value="">Select Target Column</option>';
                 document.getElementById('featureColumnsContainer').innerHTML = '';
                 currentDatasetColumns = [];
                 selectedFeatureColumns = [];
-                
+
                 // Find dataset object with columns info
-                {% for dataset in datasets %}
-                if ('{{ dataset.id }}' === datasetId) {
-                    // Populate column preview
-                    populateColumnPreview({{ dataset.columns|tojson }});
-                    
-                    // Populate target column dropdown
-                    populateTargetDropdown({{ dataset.columns|tojson }});
-                    
-                    // Populate feature columns
-                    populateFeatureColumns({{ dataset.columns|tojson }});
-                    
-                    // Store current dataset columns
-                    currentDatasetColumns = {{ dataset.columns|tojson }};
+                let datasetFound = false;
+
+                if (datasetsList && datasetsList.length) {
+                    datasetsList.forEach(dataset => {
+                        // Convert both to strings for safer comparison
+                        if (String(dataset.id) === String(datasetId)) {
+                            datasetFound = true;
+                            console.log('Found matching dataset with columns:', dataset.columns);
+
+                            if (dataset.columns && dataset.columns.length) {
+                                // Populate column preview
+                                populateColumnPreview(dataset.columns);
+
+                                // Populate target column dropdown
+                                populateTargetDropdown(dataset.columns);
+
+                                // Populate feature columns
+                                populateFeatureColumns(dataset.columns);
+
+                                // Store current dataset columns
+                                currentDatasetColumns = dataset.columns;
+                            } else {
+                                console.warn('Dataset has no columns:', dataset);
+                                alert('This dataset has no columns available.');
+                            }
+                        }
+                    });
                 }
-                {% endfor %}
-                
-                // Show model selection section
-                document.getElementById('modelSelectionSection').classList.remove('hidden');
-                
+
+                if (!datasetFound) {
+                    console.error('Dataset not found with ID:', datasetId);
+                    alert('There was an issue processing this dataset. Please try another one or refresh the page.');
+                }
+
+                // Show model selection section regardless of issues
+                const modelSection = document.getElementById('modelSelectionSection');
+                modelSection.classList.remove('hidden');
+                modelSection.style.display = 'block'; // Force display as backup
+
                 // Hide later sections if they were visible
                 document.getElementById('modelConfigSection').classList.add('hidden');
                 document.getElementById('trainingResultsSection').classList.add('hidden');
-                
+
                 // Scroll to model selection
-                document.getElementById('modelSelectionSection').scrollIntoView({ behavior: 'smooth' });
+                modelSection.scrollIntoView({ behavior: 'smooth' });
             });
         });
-        
+
         // Populate column preview section
         function populateColumnPreview(columns) {
             const preview = document.getElementById('columnPreviewContent');
@@ -449,7 +525,7 @@
                 preview.innerHTML = '<div class="text-sm text-gray-500">No column information available</div>';
                 return;
             }
-            
+
             let html = '<div class="overflow-x-auto">';
             html += '<table class="min-w-full divide-y divide-gray-200">';
             html += '<thead class="bg-gray-50"><tr>';
@@ -457,25 +533,25 @@
             html += '<th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Type</th>';
             html += '</tr></thead>';
             html += '<tbody class="bg-white divide-y divide-gray-200">';
-            
+
             columns.forEach(column => {
                 html += '<tr>';
                 html += `<td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${column.name}</td>`;
                 html += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">${column.dtype}</td>`;
                 html += '</tr>';
             });
-            
+
             html += '</tbody></table></div>';
             preview.innerHTML = html;
         }
-        
+
         // Populate target column dropdown
         function populateTargetDropdown(columns) {
             const dropdown = document.getElementById('targetColumn');
             dropdown.innerHTML = '<option value="">Select Target Column</option>';
-            
+
             if (!columns || columns.length === 0) return;
-            
+
             columns.forEach(column => {
                 const option = document.createElement('option');
                 option.value = column.name;
@@ -483,21 +559,21 @@
                 dropdown.appendChild(option);
             });
         }
-        
+
         // Populate feature columns checkboxes
         function populateFeatureColumns(columns) {
             const container = document.getElementById('featureColumnsContainer');
             container.innerHTML = '';
-            
+
             if (!columns || columns.length === 0) {
                 container.innerHTML = '<div class="text-sm text-gray-500">No columns available</div>';
                 return;
             }
-            
+
             columns.forEach(column => {
                 const div = document.createElement('div');
                 div.className = 'flex items-start';
-                
+
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = `feature_${column.name}`;
@@ -505,76 +581,76 @@
                 checkbox.value = column.name;
                 checkbox.checked = true; // Default to checked
                 checkbox.className = 'feature-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mt-1';
-                
+
                 selectedFeatureColumns.push(column.name);
-                
-                checkbox.addEventListener('change', function() {
+
+                checkbox.addEventListener('change', function () {
                     if (this.checked) {
                         selectedFeatureColumns.push(column.name);
                     } else {
                         selectedFeatureColumns = selectedFeatureColumns.filter(c => c !== column.name);
                     }
                 });
-                
+
                 const label = document.createElement('label');
                 label.htmlFor = `feature_${column.name}`;
                 label.className = 'ml-2 block text-sm text-gray-900';
                 label.textContent = column.name;
-                
+
                 div.appendChild(checkbox);
                 div.appendChild(label);
                 container.appendChild(div);
             });
         }
-        
+
         // Select/deselect all features
-        document.getElementById('selectAllFeatures').addEventListener('click', function() {
+        document.getElementById('selectAllFeatures').addEventListener('click', function () {
             document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
                 checkbox.checked = true;
             });
             selectedFeatureColumns = currentDatasetColumns.map(col => col.name);
         });
-        
-        document.getElementById('deselectAllFeatures').addEventListener('click', function() {
+
+        document.getElementById('deselectAllFeatures').addEventListener('click', function () {
             document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
                 checkbox.checked = false;
             });
             selectedFeatureColumns = [];
         });
-        
+
         // Handle model type selection
         document.querySelectorAll('.model-type-card').forEach(card => {
-            card.addEventListener('click', function() {
+            card.addEventListener('click', function () {
                 // Update visual selection
-                document.querySelectorAll('.model-type-card').forEach(c => 
+                document.querySelectorAll('.model-type-card').forEach(c =>
                     c.classList.remove('ring-2', 'ring-indigo-500'));
                 this.classList.add('ring-2', 'ring-indigo-500');
-                
+
                 // Store selected model type
                 const modelType = this.dataset.type;
                 document.getElementById('selectedModelType').value = modelType;
-                
+
                 // Update additional parameters based on model type
                 updateAdditionalParameters(modelType);
-                
+
                 // Show model configuration section
                 document.getElementById('modelConfigSection').classList.remove('hidden');
-                
+
                 // Hide results section if visible
                 document.getElementById('trainingResultsSection').classList.add('hidden');
-                
+
                 // Scroll to configuration section
                 document.getElementById('modelConfigSection').scrollIntoView({ behavior: 'smooth' });
             });
         });
-        
+
         // Update additional parameters based on model type
         function updateAdditionalParameters(modelType) {
             const container = document.getElementById('additionalParameters');
             container.innerHTML = '';
-            
+
             let html = '';
-            
+
             if (modelType === 'logistic_regression') {
                 html = `
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -631,35 +707,35 @@
                     </div>
                 `;
             }
-            
+
             container.innerHTML = html;
         }
-        
+
         // Handle form submission
-        document.getElementById('trainingForm').addEventListener('submit', function(e) {
+        document.getElementById('trainingForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             // Get form data
             const formData = new FormData(this);
             const modelType = document.getElementById('selectedModelType').value;
             const filename = selectedDatasetFilename;
             const targetColumn = document.getElementById('targetColumn').value;
-            
+
             // Validate feature column selection
             if (selectedFeatureColumns.length === 0) {
                 alert('Please select at least one feature column');
                 return;
             }
-            
+
             // Validate target column selection
             if (!targetColumn) {
                 alert('Please select a target column');
                 return;
             }
-            
+
             // Make sure target column is not in features
             const featureColumns = selectedFeatureColumns.filter(col => col !== targetColumn);
-            
+
             // Prepare request data
             const requestData = {
                 experiment_id: "{{ experiment.id }}",
@@ -673,7 +749,7 @@
                     random_state: parseInt(formData.get('randomState'))
                 }
             };
-            
+
             // Add model-specific parameters
             if (modelType === 'logistic_regression') {
                 requestData.config.C = parseFloat(formData.get('C'));
@@ -687,15 +763,15 @@
                 requestData.config.learning_rate = parseFloat(formData.get('learning_rate'));
                 requestData.config.max_depth = parseInt(formData.get('max_depth'));
             }
-            
+
             // Show training results section with loading indicator
             document.getElementById('trainingResultsSection').classList.remove('hidden');
             document.getElementById('loadingIndicator').classList.remove('hidden');
             document.getElementById('resultsContent').classList.add('hidden');
-            
+
             // Scroll to results section
             document.getElementById('trainingResultsSection').scrollIntoView({ behavior: 'smooth' });
-            
+
             // Send training request
             fetch('/api/train-model', {
                 method: 'POST',
@@ -704,38 +780,38 @@
                 },
                 body: JSON.stringify(requestData)
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error training model: ' + data.error);
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error training model: ' + data.error);
+                        document.getElementById('trainingResultsSection').classList.add('hidden');
+                        return;
+                    }
+
+                    // Hide loading indicator
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+
+                    // Display results
+                    displayTrainingResults(data);
+
+                    // Show results content
+                    document.getElementById('resultsContent').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error training model');
                     document.getElementById('trainingResultsSection').classList.add('hidden');
-                    return;
-                }
-                
-                // Hide loading indicator
-                document.getElementById('loadingIndicator').classList.add('hidden');
-                
-                // Display results
-                displayTrainingResults(data);
-                
-                // Show results content
-                document.getElementById('resultsContent').classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error training model');
-                document.getElementById('trainingResultsSection').classList.add('hidden');
-            });
+                });
         });
-        
+
         // Display training results
         function displayTrainingResults(data) {
             // Display metrics
             const metricsContainer = document.getElementById('metricsContainer');
             metricsContainer.innerHTML = '';
-            
+
             const metrics = data.metrics;
-            
+
             if (metrics) {
                 if (metrics.accuracy !== undefined) {
                     addMetricCard(metricsContainer, 'Accuracy', (metrics.accuracy * 100).toFixed(2) + '%', 'text-blue-600');
@@ -749,27 +825,30 @@
                 if (metrics.f1_score !== undefined) {
                     addMetricCard(metricsContainer, 'F1 Score', (metrics.f1_score * 100).toFixed(2) + '%', 'text-purple-600');
                 }
-                if (metrics.r2_score !== undefined) {
-                    addMetricCard(metricsContainer, 'R² Score', metrics.r2_score.toFixed(4), 'text-blue-600');
+                if (metrics.r2 !== undefined) {
+                    addMetricCard(metricsContainer, 'R² Score', metrics.r2.toFixed(4), 'text-blue-600');
                 }
                 if (metrics.mse !== undefined) {
                     addMetricCard(metricsContainer, 'MSE', metrics.mse.toFixed(4), 'text-red-600');
                 }
+                if (metrics.rmse !== undefined) {
+                    addMetricCard(metricsContainer, 'RMSE', metrics.rmse.toFixed(4), 'text-red-600');
+                }
             }
-            
+
             // Display feature importance if available
             const featureImportanceContainer = document.getElementById('featureImportanceContainer');
             if (data.feature_importance) {
                 const features = Object.keys(data.feature_importance);
                 const importances = Object.values(data.feature_importance);
-                
+
                 // Sort features by importance
                 const pairs = features.map((feature, i) => ({ feature, importance: importances[i] }));
                 pairs.sort((a, b) => b.importance - a.importance);
-                
+
                 const sortedFeatures = pairs.map(pair => pair.feature);
                 const sortedImportances = pairs.map(pair => pair.importance);
-                
+
                 const plot = {
                     data: [{
                         type: 'bar',
@@ -786,13 +865,13 @@
                         margin: { l: 150, r: 20, t: 30, b: 40 }
                     }
                 };
-                
+
                 Plotly.newPlot(featureImportanceContainer, plot.data, plot.layout);
             } else {
                 featureImportanceContainer.innerHTML = '<p class="text-gray-500">No feature importance data available for this model type</p>';
             }
         }
-        
+
         // Helper function to add a metric card
         function addMetricCard(container, title, value, valueClass) {
             const card = document.createElement('div');
@@ -805,79 +884,84 @@
             `;
             container.appendChild(card);
         }
-        
+
         // Handle "Train Another Model" button
-        document.getElementById('trainNewModelBtn').addEventListener('click', function() {
+        document.getElementById('trainNewModelBtn').addEventListener('click', function () {
             // Reset form
             document.getElementById('trainingForm').reset();
-            
+
             // Clear selections
-            document.querySelectorAll('.dataset-card').forEach(c => 
+            document.querySelectorAll('.dataset-card').forEach(c =>
                 c.classList.remove('ring-2', 'ring-indigo-500'));
-            document.querySelectorAll('.model-type-card').forEach(c => 
+            document.querySelectorAll('.model-type-card').forEach(c =>
                 c.classList.remove('ring-2', 'ring-indigo-500'));
-            
+
             // Hide result and config sections
             document.getElementById('modelConfigSection').classList.add('hidden');
             document.getElementById('trainingResultsSection').classList.add('hidden');
-            
+
             // Scroll to dataset selection
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
-        
+
         // Handle dataset preview
         document.querySelectorAll('.preview-dataset-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation(); // Prevent triggering dataset selection
-                
+                e.preventDefault(); // Also prevent default behavior
+
                 const datasetId = this.dataset.id;
-                
+
                 // Show modal with loading state
                 const modal = document.getElementById('dataPreviewModal');
                 modal.classList.remove('hidden');
-                
+
                 document.getElementById('previewLoading').classList.remove('hidden');
                 document.getElementById('previewContent').classList.add('hidden');
-                
+
                 // Fetch dataset preview data
                 fetch(`/api/dataset/preview/${datasetId}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.error) {
-                            alert('Error loading preview: ' + data.error);
-                            return;
+                            throw new Error(data.error);
                         }
-                        
+
                         // Update dataset info
                         const dataset = data.dataset;
                         const preview = data.preview;
-                        
+
                         document.getElementById('preview-modal-title').textContent = `Preview: ${dataset.filename}`;
-                        document.getElementById('preview-dataset-info').textContent = 
+                        document.getElementById('preview-dataset-info').textContent =
                             `Showing ${preview.rows.length} of ${preview.total_rows} rows | ${preview.total_columns} columns | Type: ${dataset.filetype}`;
-                        
+
                         // Update table header
                         const headerRow = document.getElementById('previewTableHeader');
                         headerRow.innerHTML = '';
-                        
+
                         preview.columns.forEach(col => {
                             const th = document.createElement('th');
                             th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
                             th.textContent = col.name;
                             headerRow.appendChild(th);
                         });
-                        
+
                         // Update table body
                         const tableBody = document.getElementById('previewTableBody');
                         tableBody.innerHTML = '';
-                        
+
                         preview.rows.forEach(row => {
                             const tr = document.createElement('tr');
-                            
+
                             preview.columns.forEach(col => {
                                 const td = document.createElement('td');
                                 td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
-                                
+
                                 // Format the cell value based on its type
                                 const value = row[col.name];
                                 if (value === null || value === undefined) {
@@ -887,29 +971,34 @@
                                 } else {
                                     td.textContent = value;
                                 }
-                                
+
                                 tr.appendChild(td);
                             });
-                            
+
                             tableBody.appendChild(tr);
                         });
-                        
+
                         // Hide loading, show content
                         document.getElementById('previewLoading').classList.add('hidden');
                         document.getElementById('previewContent').classList.remove('hidden');
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Error loading preview');
-                        modal.classList.add('hidden');
+                        alert(`Error loading preview: ${error.message || 'Unknown error'}`);
+                        document.getElementById('previewLoading').classList.add('hidden');
+
+                        // Don't hide the modal automatically - let user close it
+                        document.getElementById('preview-dataset-info').textContent =
+                            `Failed to load preview: ${error.message || 'Unknown error'}`;
                     });
             });
         });
-        
+
         // Close preview modal
-        document.getElementById('closePreviewModal').addEventListener('click', function() {
+        document.getElementById('closePreviewModal').addEventListener('click', function () {
             document.getElementById('dataPreviewModal').classList.add('hidden');
         });
     </script>
 </body>
+
 </html>
