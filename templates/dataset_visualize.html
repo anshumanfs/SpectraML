@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dataset Visualization - SpectraML</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.33.1/plotly.min.js" ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.33.1/plotly.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="/static/js/visualization-utils.js"></script>
+    <script src="/static/js/visualization-types.js"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -102,248 +103,11 @@
                         </nav>
                     </div>
                     
-                    <!-- Basic Visualizations -->
-                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" id="basic-viz">
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
-                                    <i class="fas fa-chart-scatter"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Scatter Plot</h3>
-                                    <p class="text-sm text-gray-500">Show relationships between variables</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="line">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Line Chart</h3>
-                                    <p class="text-sm text-gray-500">Show trends over a continuous interval</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="bar">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Bar Chart</h3>
-                                    <p class="text-sm text-gray-500">Compare quantities across categories</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="histogram">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
-                                    <i class="fas fa-chart-bar fa-rotate-90"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Histogram</h3>
-                                    <p class="text-sm text-gray-500">Show distribution of a single variable</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="box">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-green-100 text-green-800">
-                                    <i class="fas fa-box"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Box Plot</h3>
-                                    <p class="text-sm text-gray-500">Show distribution statistics</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="pie">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-yellow-100 text-yellow-800">
-                                    <i class="fas fa-chart-pie"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Pie Chart</h3>
-                                    <p class="text-sm text-gray-500">Show proportion of categories</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Advanced Visualizations -->
-                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden" id="advanced-viz">
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="violin">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-purple-100 text-purple-800">
-                                    <i class="fas fa-music"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Violin Plot</h3>
-                                    <p class="text-sm text-gray-500">Show distribution density and statistics</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="heatmap">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-red-100 text-red-800">
-                                    <i class="fas fa-fire"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Heatmap</h3>
-                                    <p class="text-sm text-gray-500">Visualize matrix data with colors</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter_3d">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
-                                    <i class="fas fa-cube"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">3D Scatter</h3>
-                                    <p class="text-sm text-gray-500">Visualize data in three dimensions</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="contour">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-gray-100 text-gray-800">
-                                    <i class="fas fa-map-marked-alt"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Contour Plot</h3>
-                                    <p class="text-sm text-gray-500">Show 3D surface with contour lines</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="parallel_coordinates">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
-                                    <i class="fas fa-stream"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Parallel Coordinates</h3>
-                                    <p class="text-sm text-gray-500">Compare multiple variables</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="scatter_matrix">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-indigo-100 text-indigo-800">
-                                    <i class="fas fa-th"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Scatter Matrix</h3>
-                                    <p class="text-sm text-gray-500">Grid of scatter plots</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="treemap">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-green-100 text-green-800">
-                                    <i class="fas fa-sitemap"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Treemap</h3>
-                                    <p class="text-sm text-gray-500">Hierarchical data with nested rectangles</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="sankey">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-teal-100 text-teal-800">
-                                    <i class="fas fa-random"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Sankey Diagram</h3>
-                                    <p class="text-sm text-gray-500">Visualize flow between nodes</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="density_contour">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-gray-100 text-gray-800">
-                                    <i class="fas fa-map"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Density Contour</h3>
-                                    <p class="text-sm text-gray-500">Show density of points with contours</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Statistical Visualizations -->
-                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden" id="statistical-viz">
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="correlation">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-red-100 text-red-800">
-                                    <i class="fas fa-th"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Correlation Matrix</h3>
-                                    <p class="text-sm text-gray-500">Visualize correlations between variables</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="distribution">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
-                                    <i class="fas fa-chart-area"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Distribution Plot</h3>
-                                    <p class="text-sm text-gray-500">Show data distribution with KDE</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="qq_plot">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-yellow-100 text-yellow-800">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Q-Q Plot</h3>
-                                    <p class="text-sm text-gray-500">Compare distributions</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="residual_plot">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-green-100 text-green-800">
-                                    <i class="fas fa-chart-scatter"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Residual Plot</h3>
-                                    <p class="text-sm text-gray-500">Analyze regression model fit</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="pair_plot">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-purple-100 text-purple-800">
-                                    <i class="fas fa-th-large"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Pair Plot</h3>
-                                    <p class="text-sm text-gray-500">Matrix of relationships in dataset</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="viz-type-card border rounded-lg p-4 hover:bg-indigo-50 cursor-pointer" data-type="time_series_decomposition">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-md bg-blue-100 text-blue-800">
-                                    <i class="fas fa-hourglass-half"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-md font-medium">Time Series Decomposition</h3>
-                                    <p class="text-sm text-gray-500">Analyze temporal patterns</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Visualization Types Container -->
+                    <!-- These will be populated by JavaScript -->
+                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" id="basic-viz"></div>
+                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden" id="advanced-viz"></div>
+                    <div class="viz-category-content mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden" id="statistical-viz"></div>
                 </div>
             </div>
         </div>
@@ -355,38 +119,17 @@
                     <h2 class="text-lg font-medium text-gray-900" id="configTitle">Configure Visualization</h2>
                     <form id="vizForm" class="mt-4">
                         <input type="hidden" id="vizType" name="vizType" value="">
-                        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                            <div class="sm:col-span-3">
-                                <label for="xAxis" class="block text-sm font-medium text-gray-700">X-Axis Column</label>
-                                <select id="xAxis" name="xAxis" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                    <option value="">Select a column</option>
-                                    {% if data_info and data_info.columns %}
-                                        {% for column in data_info.columns %}
-                                            <option value="{{ column.name }}">{{ column.name }} ({{ column.dtype }})</option>
-                                        {% endfor %}
-                                    {% endif %}
-                                </select>
-                            </div>
-
-                            <div class="sm:col-span-3">
-                                <label for="yAxis" class="block text-sm font-medium text-gray-700">Y-Axis Column</label>
-                                <select id="yAxis" name="yAxis" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                    <option value="">Select a column</option>
-                                    {% if data_info and data_info.columns %}
-                                        {% for column in data_info.columns %}
-                                            <option value="{{ column.name }}">{{ column.name }} ({{ column.dtype }})</option>
-                                        {% endfor %}
-                                    {% endif %}
-                                </select>
-                            </div>
-
-                            <!-- Special options will be dynamically inserted by handleSpecialVizOptions() -->
-
-                            <div class="sm:col-span-6">
-                                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Generate Visualization
-                                </button>
-                            </div>
+                        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6" id="vizFormFields">
+                            <!-- Dynamic form fields will be added here by JavaScript -->
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button type="button" id="cancelVisualizationBtn" class="mr-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Generate Visualization
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -425,7 +168,16 @@
         </div>
     </footer>
 
+    <!-- Data Preview Modal (optional) -->
+    <div id="dataPreviewModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+        <!-- Modal content goes here -->
+    </div>
+
     <script>
+        // Visualization options from server
+        const vizOptions = {{ viz_options|tojson|safe if viz_options else '{}' }};
+        const dataColumns = {{ data_info.columns|tojson|safe if data_info and data_info.columns else '[]' }};
+        
         // Handle category tab switching
         document.querySelectorAll('.viz-category-tab').forEach(tab => {
             tab.addEventListener('click', function() {
@@ -446,513 +198,496 @@
             });
         });
 
-        // Handle visualization type selection
-        document.querySelectorAll('.viz-type-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const vizType = this.dataset.type;
-                document.getElementById('vizType').value = vizType;
-                document.getElementById('configTitle').textContent = `Configure ${vizType.replace('_', ' ').charAt(0).toUpperCase() + vizType.replace('_', ' ').slice(1)} Plot`;
-                
-                // Show configuration section
-                document.getElementById('vizConfig').classList.remove('hidden');
-                
-                // Reset form
-                document.getElementById('vizForm').reset();
-                
-                // Hide result section
-                document.getElementById('vizResult').classList.add('hidden');
-                
-                // Special handling for different viz types
-                handleSpecialVizOptions(vizType);
-            });
-        });
-        
-        // Function to handle special visualization type options
-        function handleSpecialVizOptions(vizType) {
-            // Clear any previous special options first
-            const specialOptionsContainer = document.getElementById('specialOptions');
-            if (specialOptionsContainer) {
-                specialOptionsContainer.remove();
-            }
-            
-            // Find the submit button container to insert before
-            const submitButtonContainer = document.querySelector('#vizForm button[type="submit"]').parentNode;
-            
-            // Create a container for special options
-            const container = document.createElement('div');
-            container.id = 'specialOptions';
-            container.className = 'sm:col-span-6 mt-4';
-            
-            // Add specific options based on visualization type
-            if (vizType === 'scatter' || vizType === 'line') {
-                console.log(`Setting up Use Index option for ${vizType} chart`);
-                
-                // Add index option for scatter and line plots - with enhanced visibility
-                container.innerHTML = `
-                    <div class="flex items-center bg-blue-50 p-4 rounded-md mb-4">
-                        <input id="vizUseIndex" name="useIndex" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        <label for="vizUseIndex" class="ml-2 block text-sm text-gray-700 font-medium">
-                            Use Row Index for Single Column Plot
-                        </label>
-                    </div>
-                    <div class="mt-1 text-sm text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        When checked, you only need to select either X-axis OR Y-axis (not both). 
-                        The row numbers will be used for the other axis automatically.
-                    </div>
-                `;
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
-                
-                // Add event listener for the checkbox with improved feedback
-                const useIndexCheckbox = document.getElementById('vizUseIndex');
-                if (useIndexCheckbox) {
-                    useIndexCheckbox.addEventListener('change', function() {
-                        const xAxisField = document.getElementById('xAxis');
-                        const yAxisField = document.getElementById('yAxis');
-                        const xLabel = document.querySelector('label[for="xAxis"]');
-                        const yLabel = document.querySelector('label[for="yAxis"]');
-                        
-                        console.log(`Use Index checkbox changed: ${this.checked}`);
-                        
-                        if (this.checked) {
-                            // Update labels to make it clear you only need one
-                            xLabel.textContent = "X-Axis Column (Optional if Y-Axis is selected)";
-                            yLabel.textContent = "Y-Axis Column (Optional if X-Axis is selected)";
-                            
-                            // Remove required attributes
-                            xAxisField.removeAttribute('required');
-                            yAxisField.removeAttribute('required');
-                        } else {
-                            // Restore original labels
-                            xLabel.textContent = "X-Axis Column";
-                            yLabel.textContent = "Y-Axis Column";
-                            
-                            // Make both required again
-                            xAxisField.setAttribute('required', 'required');
-                            yAxisField.setAttribute('required', 'required');
-                        }
+        // Initialize visualization card events - needs to run after cards are created
+        function initializeVisualizationCards() {
+            document.querySelectorAll('.viz-type-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // Clear previous selection
+                    document.querySelectorAll('.viz-type-card').forEach(c => {
+                        c.classList.remove('ring-2', 'ring-indigo-500');
                     });
-                } else {
-                    console.error("Failed to find useIndex checkbox after creating it!");
+                    
+                    // Highlight selected card
+                    this.classList.add('ring-2', 'ring-indigo-500');
+                    
+                    const vizType = this.dataset.type;
+                    document.getElementById('vizType').value = vizType;
+                    document.getElementById('configTitle').textContent = `Configure ${vizType.replace('_', ' ').charAt(0).toUpperCase() + vizType.replace('_', ' ').slice(1)} Plot`;
+                    
+                    // Show configuration section and update form fields
+                    document.getElementById('vizConfig').classList.remove('hidden');
+                    
+                    // Reset form
+                    document.getElementById('vizForm').reset();
+                    
+                    // Hide result section
+                    document.getElementById('vizResult').classList.add('hidden');
+                    
+                    // Generate dynamic form fields for the selected visualization type
+                    generateFormFields(vizType);
+                    
+                    // Scroll to configuration section
+                    document.getElementById('vizConfig').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        }
+        
+        // Function to generate form fields based on visualization type
+        function generateFormFields(vizType) {
+            const formFields = document.getElementById('vizFormFields');
+            formFields.innerHTML = ''; // Clear existing fields
+            
+            // Add visualization type field
+            const vizTypeField = document.createElement('input');
+            vizTypeField.type = 'hidden';
+            vizTypeField.name = 'viz_type';
+            vizTypeField.value = vizType;
+            formFields.appendChild(vizTypeField);
+            
+            // Add title field
+            const titleField = document.createElement('div');
+            titleField.className = 'sm:col-span-6';
+            titleField.innerHTML = `
+                <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" name="title" id="title" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                       value="${vizType.replace('_', ' ').charAt(0).toUpperCase() + vizType.replace('_', ' ').slice(1)} Visualization">
+            `;
+            formFields.appendChild(titleField);
+            
+            // Get option definitions for this visualization type
+            const options = getVisualizationOptions(vizType);
+            
+            // Create form fields based on option definitions
+            for (const [key, option] of Object.entries(options)) {
+                if (key === 'title') continue; // Skip title, we already added it
+                
+                // Skip options that aren't meant for form display
+                if (option.hidden) continue;
+                
+                if (option.type === 'column') {
+                    addColumnSelector(formFields, key, option.label, option.required !== false);
+                } 
+                else if (option.type === 'multicolumn') {
+                    addMultiColumnSelector(formFields, key, option.label);
+                }
+                else if (option.type === 'boolean') {
+                    addCheckbox(formFields, key, option.label, option.default);
+                }
+                else if (option.type === 'number') {
+                    addNumberInput(formFields, key, option.label, option.default, option.min, option.max, option.step);
+                }
+                else if (option.type === 'select') {
+                    addSelectInput(formFields, key, option.label, option.options, option.default);
                 }
             }
-            else if (vizType === 'histogram' || vizType === 'distribution') {
-                // Only need one axis for histogram
-                document.querySelector('label[for="yAxis"]').parentNode.classList.add('hidden');
-                document.querySelector('label[for="xAxis"]').textContent = 'Values Column';
-                document.getElementById('yAxis').removeAttribute('required');
+            
+            // Add visualization-specific customizations
+            addVisualizationSpecificFields(vizType, formFields);
+        }
+        
+        // Function to get option definitions for a visualization type
+        function getVisualizationOptions(vizType) {
+            // Check if we have options from server
+            if (vizOptions && vizOptions[vizType]) {
+                return vizOptions[vizType];
             }
-            else if (vizType === 'pie') {
-                // Rename axes for pie chart with clear descriptions
-                document.querySelector('label[for="xAxis"]').textContent = 'Names/Categories Column (Slices)';
-                document.querySelector('label[for="yAxis"]').textContent = 'Values Column (Size of Slices)';
-                
-                // Make sure the Y-axis field is not hidden and required
-                document.querySelector('label[for="yAxis"]').parentNode.classList.remove('hidden');
-                document.getElementById('yAxis').setAttribute('required', 'required');
-                
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>Pie charts require two columns: one for the names of each slice (categorical), and one for their values (numeric).</span>
-                    </div>
-                `;
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+            
+            // If not, use defaults based on visualization type
+            const commonOptions = {
+                title: { type: 'text', label: 'Chart Title' }
+            };
+            
+            // Specific options for each visualization type
+            if (['scatter', 'line'].includes(vizType)) {
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'X-Axis Column', required: true },
+                    y: { type: 'column', label: 'Y-Axis Column', required: true },
+                    color: { type: 'column', label: 'Color By (Optional)', required: false },
+                    use_index: { type: 'boolean', label: 'Use Row Index for Single Column Plot', default: false }
+                };
+            } 
+            else if (vizType === 'bar') {
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'Categories (X-Axis)', required: true },
+                    y: { type: 'column', label: 'Values (Y-Axis)', required: true },
+                    color: { type: 'column', label: 'Color By (Optional)', required: false }
+                };
+            }
+            else if (vizType === 'histogram') {
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'Values Column', required: true },
+                    nbins: { type: 'number', label: 'Number of Bins', default: 30, min: 5, max: 100 }
+                };
             }
             else if (vizType === 'box') {
-                // Box plots need at least Y-axis (values)
-                document.querySelector('label[for="xAxis"]').textContent = 'Group By Column (Optional)';
-                document.querySelector('label[for="yAxis"]').textContent = 'Values Column (Required)';
-                document.getElementById('xAxis').removeAttribute('required');
-                
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>Box plots require a <strong>numeric</strong> values column (Y-axis). The group-by column (X-axis) is optional.</span>
-                    </div>
-                `;
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+                return {
+                    ...commonOptions,
+                    y: { type: 'column', label: 'Values Column', required: true },
+                    x: { type: 'column', label: 'Group By (Optional)', required: false }
+                };
             }
-            else if (vizType === 'bar') {
-                // Bar charts need both axes
-                document.querySelector('label[for="xAxis"]').textContent = 'Categories Column (X-Axis)';
-                document.querySelector('label[for="yAxis"]').textContent = 'Values Column (Y-Axis)';
-                
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>Bar charts display values (Y-axis) for different categories (X-axis).</span>
-                    </div>
-                `;
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+            else if (vizType === 'pie') {
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'Categories Column', required: true },
+                    y: { type: 'column', label: 'Values Column (numeric)', required: true }
+                };
+            }
+            else if (vizType === 'violin') {
+                return {
+                    ...commonOptions,
+                    y: { type: 'column', label: 'Values Column', required: true },
+                    x: { type: 'column', label: 'Group By (Optional)', required: false }
+                };
             }
             else if (vizType === 'heatmap') {
-                // Heatmaps need x and y axes for categories/coordinates
-                document.querySelector('label[for="xAxis"]').textContent = 'X-Axis Categories';
-                document.querySelector('label[for="yAxis"]').textContent = 'Y-Axis Categories';
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'X-Axis Column', required: true },
+                    y: { type: 'column', label: 'Y-Axis Column', required: true },
+                    z: { type: 'column', label: 'Z Values Column (Optional)', required: false },
+                    colorscale: { type: 'select', label: 'Color Scale', options: ['Viridis', 'Plasma', 'Inferno', 'Magma', 'Cividis', 'Jet'] }
+                };
+            }
+            else if (['contour', 'density_contour'].includes(vizType)) {
+                const options = {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'X-Axis Column (Numeric)', required: true },
+                    y: { type: 'column', label: 'Y-Axis Column (Numeric)', required: true },
+                    colorscale: { type: 'select', label: 'Color Scale', options: ['Viridis', 'Plasma', 'Inferno', 'Magma', 'Cividis', 'Jet'] }
+                };
                 
-                // Add container for Z-value option (optional third parameter)
-                const zValueOption = document.createElement('div');
-                zValueOption.className = 'sm:col-span-6 mt-4';
-                zValueOption.innerHTML = `
-                    <label for="zAxis" class="block text-sm font-medium text-gray-700">Z Values (Optional)</label>
-                    <select id="zAxis" name="z" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="">-- Count occurrences --</option>
-                        {% if data_info and data_info.columns %}
-                            {% for column in data_info.columns %}
-                                {% if "float" in column.dtype or "int" in column.dtype %}
-                                    <option value="{{ column.name }}">{{ column.name }} ({{ column.dtype }})</option>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">
-                        If selected, values from this column will be used for heat intensity. Otherwise, occurrence counts will be used.
-                    </p>
-                `;
+                if (vizType === 'contour') {
+                    options.z = { type: 'column', label: 'Z Values Column (Optional)', required: false };
+                }
                 
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>Heatmaps show intensity values at intersections of x and y categories.</span>
-                    </div>
-                `;
-                
-                // Add both elements
-                submitButtonContainer.parentNode.insertBefore(zValueOption, submitButtonContainer);
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+                return options;
+            }
+            else if (['scatter_3d', 'surface_3d'].includes(vizType)) {
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'X-Axis Column (Numeric)', required: true },
+                    y: { type: 'column', label: 'Y-Axis Column (Numeric)', required: true },
+                    z: { type: 'column', label: 'Z-Axis Column (Numeric)', required: true },
+                    color: { type: 'column', label: 'Color By (Optional)', required: false }
+                };
+            }
+            else if (vizType === 'parallel_coordinates') {
+                return {
+                    ...commonOptions,
+                    columns: { type: 'multicolumn', label: 'Columns to Include' },
+                    color: { type: 'column', label: 'Color By (Optional)', required: false }
+                };
+            }
+            else if (['treemap', 'sunburst'].includes(vizType)) {
+                return {
+                    ...commonOptions,
+                    path: { type: 'multicolumn', label: 'Hierarchy Path Columns' },
+                    values: { type: 'column', label: 'Values Column (Size)', required: true },
+                    color: { type: 'column', label: 'Color By (Optional)', required: false }
+                };
+            }
+            else if (vizType === 'radar') {
+                return {
+                    ...commonOptions,
+                    theta: { type: 'column', label: 'Categories Column', required: true },
+                    r: { type: 'column', label: 'Values Column (Numeric)', required: true },
+                    color: { type: 'column', label: 'Group By (Optional)', required: false }
+                };
             }
             else if (vizType === 'correlation') {
-                // Create multiselect for columns
-                const columnsMultiselect = document.createElement('div');
-                columnsMultiselect.className = 'sm:col-span-6';
-                columnsMultiselect.innerHTML = `
-                    <label for="correlationColumns" class="block text-sm font-medium text-gray-700">
-                        Columns to Correlate (Optional)
-                    </label>
-                    <select id="correlationColumns" name="columns" multiple class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        {% if data_info and data_info.columns %}
-                            {% for column in data_info.columns %}
-                                {% if "float" in column.dtype or "int" in column.dtype %}
-                                    <option value="{{ column.name }}">{{ column.name }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">
-                        Hold Ctrl/Cmd to select multiple columns. If none selected, all numeric columns will be used.
-                    </p>
-                `;
-                
-                // Hide X/Y axis fields
-                document.querySelector('label[for="xAxis"]').parentNode.classList.add('hidden');
-                document.querySelector('label[for="yAxis"]').parentNode.classList.add('hidden');
-                document.getElementById('xAxis').removeAttribute('required');
-                document.getElementById('yAxis').removeAttribute('required');
-                
-                // Insert before submit button
-                submitButtonContainer.parentNode.insertBefore(columnsMultiselect, submitButtonContainer);
+                return {
+                    ...commonOptions,
+                    columns: { type: 'multicolumn', label: 'Columns to Correlate' },
+                    show_values: { type: 'boolean', label: 'Show Values', default: true },
+                    colorscale: { type: 'select', label: 'Color Scale', options: ['RdBu_r', 'Viridis', 'Plasma', 'Cividis'] }
+                };
             }
-            else if (vizType === 'scatter_3d') {
-                // 3D scatter plots need x, y, and z axes
-                document.querySelector('label[for="xAxis"]').textContent = 'X-Axis (Numeric)';
-                document.querySelector('label[for="yAxis"]').textContent = 'Y-Axis (Numeric)';
-                
-                // Add Z-axis dropdown
-                const zAxisContainer = document.createElement('div');
-                zAxisContainer.className = 'sm:col-span-3';
-                zAxisContainer.innerHTML = `
-                    <label for="zAxis" class="block text-sm font-medium text-gray-700">Z-Axis (Numeric)</label>
-                    <select id="zAxis" name="zAxis" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="">Select a column</option>
-                        {% if data_info and data_info.columns %}
-                            {% for column in data_info.columns %}
-                                {% if "float" in column.dtype or "int" in column.dtype %}
-                                    <option value="{{ column.name }}">{{ column.name }} ({{ column.dtype }})</option>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                `;
-                
-                // Add color dropdown (optional)
-                const colorContainer = document.createElement('div');
-                colorContainer.className = 'sm:col-span-3';
-                colorContainer.innerHTML = `
-                    <label for="colorAxis" class="block text-sm font-medium text-gray-700">Color By (Optional)</label>
-                    <select id="colorAxis" name="colorAxis" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="">-- No color mapping --</option>
-                        {% if data_info and data_info.columns %}
-                            {% for column in data_info.columns %}
-                                <option value="{{ column.name }}">{{ column.name }} ({{ column.dtype }})</option>
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                `;
-                
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>3D scatter plots require three numeric columns for X, Y, and Z axes.</span>
-                    </div>
-                `;
-                
-                // Find the Y-axis field's parent and insert Z-axis after it
-                const yAxisParent = document.querySelector('label[for="yAxis"]').parentNode;
-                yAxisParent.parentNode.insertBefore(zAxisContainer, yAxisParent.nextSibling);
-                
-                // Insert color dropdown and helper text
-                submitButtonContainer.parentNode.insertBefore(colorContainer, submitButtonContainer);
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+            else if (vizType === 'distribution') {
+                return {
+                    ...commonOptions,
+                    column: { type: 'column', label: 'Values Column', required: true },
+                    nbins: { type: 'number', label: 'Number of Bins', default: 30, min: 5, max: 100 }
+                };
             }
-            else if (vizType === 'contour') {
-                // Contour plots need numeric x and y
-                document.querySelector('label[for="xAxis"]').textContent = 'X-Axis (Numeric)';
-                document.querySelector('label[for="yAxis"]').textContent = 'Y-Axis (Numeric)';
-                
-                // Add Z values option (optional)
-                const zValueOption = document.createElement('div');
-                zValueOption.className = 'sm:col-span-6 mt-4';
-                zValueOption.innerHTML = `
-                    <label for="zAxis" class="block text-sm font-medium text-gray-700">Z Values (Optional)</label>
-                    <select id="zAxis" name="z" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="">-- Use density of points --</option>
-                        {% if data_info and data_info.columns %}
-                            {% for column in data_info.columns %}
-                                {% if "float" in column.dtype or "int" in column.dtype %}
-                                    <option value="{{ column.name }}">{{ column.name }} ({{ column.dtype }})</option>
-                                {% endif %}
-                            {% endfor %}
-                        {% endif %}
-                    </select>
-                    <p class="mt-1 text-xs text-gray-500">
-                        If no Z values are selected, the contour plot will show the density of points.
-                    </p>
-                `;
-                
-                // Add colorscale option
-                const colorscaleOption = document.createElement('div');
-                colorscaleOption.className = 'sm:col-span-3 mt-4';
-                colorscaleOption.innerHTML = `
-                    <label for="colorscale" class="block text-sm font-medium text-gray-700">Color Scale</label>
-                    <select id="colorscale" name="colorscale" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="Viridis">Viridis</option>
-                        <option value="Plasma">Plasma</option>
-                        <option value="Inferno">Inferno</option>
-                        <option value="Magma">Magma</option>
-                        <option value="Cividis">Cividis</option>
-                        <option value="Jet">Jet</option>
-                    </select>
-                `;
-                
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>Contour plots show levels of equal values across a 2D surface. Both X and Y axes must be numeric.</span>
-                    </div>
-                `;
-                
-                // Add to form
-                submitButtonContainer.parentNode.insertBefore(zValueOption, submitButtonContainer);
-                submitButtonContainer.parentNode.insertBefore(colorscaleOption, submitButtonContainer);
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+            else if (vizType === 'qq_plot') {
+                return {
+                    ...commonOptions,
+                    column: { type: 'column', label: 'Values Column', required: true }
+                };
             }
-            else if (vizType === 'density_contour') {
-                // Contour plots need numeric x and y
-                document.querySelector('label[for="xAxis"]').textContent = 'X-Axis (Numeric)';
-                document.querySelector('label[for="yAxis"]').textContent = 'Y-Axis (Numeric)';
-                
-                // Add colorscale option
-                const colorscaleOption = document.createElement('div');
-                colorscaleOption.className = 'sm:col-span-3 mt-4';
-                colorscaleOption.innerHTML = `
-                    <label for="colorscale" class="block text-sm font-medium text-gray-700">Color Scale</label>
-                    <select id="colorscale" name="colorscale" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="Viridis">Viridis</option>
-                        <option value="Plasma">Plasma</option>
-                        <option value="Inferno">Inferno</option>
-                        <option value="Magma">Magma</option>
-                        <option value="Cividis">Cividis</option>
-                        <option value="Jet">Jet</option>
-                    </select>
+            else if (vizType === 'residual_plot') {
+                return {
+                    ...commonOptions,
+                    x: { type: 'column', label: 'Predictor Column (X)', required: true },
+                    y: { type: 'column', label: 'Response Column (Y)', required: true }
+                };
+            }
+            else if (vizType === 'pair_plot') {
+                return {
+                    ...commonOptions,
+                    columns: { type: 'multicolumn', label: 'Columns to Include' },
+                    color: { type: 'column', label: 'Color By (Optional)', required: false }
+                };
+            }
+            else if (vizType === 'cluster_map') {
+                return {
+                    ...commonOptions,
+                    columns: { type: 'multicolumn', label: 'Columns to Include' },
+                    show_values: { type: 'boolean', label: 'Show Values', default: true },
+                    colorscale: { type: 'select', label: 'Color Scale', options: ['RdBu_r', 'Viridis', 'Plasma', 'Cividis'] }
+                };
+            }
+            
+            // Default options for any other type
+            return {
+                ...commonOptions,
+                x: { type: 'column', label: 'X-Axis Column', required: true },
+                y: { type: 'column', label: 'Y-Axis Column', required: true }
+            };
+        }
+        
+        // Add visualization-specific customizations to form
+        function addVisualizationSpecificFields(vizType, formContainer) {
+            // Add special instructions for specific chart types
+            const helpText = document.createElement('div');
+            helpText.className = 'sm:col-span-6 mt-2 bg-blue-50 p-3 rounded text-sm text-blue-700';
+            
+            if (vizType === 'scatter' || vizType === 'line') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    When "Use Row Index" is checked, you only need to select either X or Y axis (not both).
+                    The row index will be used for the other axis.
                 `;
+                formContainer.appendChild(helpText);
                 
-                // Add helper text
-                container.innerHTML = `
-                    <div class="bg-blue-50 p-4 rounded-md text-blue-700 text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        <span>Density contour plots show the concentration of data points. Better for exploring relationships in scattered data.</span>
-                    </div>
+                // Add event listener to the use_index checkbox to make fields optional
+                setTimeout(() => {
+                    const useIndexCheckbox = document.querySelector('input[name="use_index"]');
+                    if (useIndexCheckbox) {
+                        useIndexCheckbox.addEventListener('change', function() {
+                            const xField = document.querySelector('select[name="x"]');
+                            const yField = document.querySelector('select[name="y"]');
+                            
+                            if (this.checked) {
+                                // Make both fields optional when index is enabled
+                                xField.removeAttribute('required');
+                                yField.removeAttribute('required');
+                                
+                                // Update labels
+                                document.querySelector('label[for="x"]').textContent = 'X-Axis Column (Optional if Y is selected)';
+                                document.querySelector('label[for="y"]').textContent = 'Y-Axis Column (Optional if X is selected)';
+                            } else {
+                                // Make both fields required when index is disabled
+                                xField.setAttribute('required', 'required');
+                                yField.setAttribute('required', 'required');
+                                
+                                // Restore labels
+                                document.querySelector('label[for="x"]').textContent = 'X-Axis Column';
+                                document.querySelector('label[for="y"]').textContent = 'Y-Axis Column';
+                            }
+                        });
+                    }
+                }, 100);
+            }
+            else if (vizType === 'pie') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Pie charts require a categorical column for slices and a numeric column for values.
                 `;
-                
-                // Add to form
-                submitButtonContainer.parentNode.insertBefore(colorscaleOption, submitButtonContainer);
-                submitButtonContainer.parentNode.insertBefore(container, submitButtonContainer);
+                formContainer.appendChild(helpText);
+            }
+            else if (vizType === 'heatmap') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Heatmaps show relationships between two categorical variables. If a Z-value column is not selected, the count of occurrences will be used.
+                `;
+                formContainer.appendChild(helpText);
+            }
+            else if (vizType === 'box') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Box plots show distribution statistics. The values column must be numeric. Group by column is optional.
+                `;
+                formContainer.appendChild(helpText);
+            }
+            else if (vizType === 'scatter_3d' || vizType === 'surface_3d') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    3D plots require three numeric columns for X, Y, and Z axes.
+                `;
+                formContainer.appendChild(helpText);
+            }
+            else if (vizType === 'treemap' || vizType === 'sunburst') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Hierarchical visualizations require path columns (in order of hierarchy) and a numeric values column.
+                `;
+                formContainer.appendChild(helpText);
+            }
+            else if (vizType === 'correlation') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Correlation matrix shows relationships between numeric columns. If no columns are selected, all numeric columns will be used.
+                `;
+                formContainer.appendChild(helpText);
+            }
+            else if (vizType === 'pair_plot') {
+                helpText.innerHTML = `
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Pair plots create a matrix of scatterplots for multiple variables. Select 2-5 columns for best results.
+                `;
+                formContainer.appendChild(helpText);
             }
         }
+        
+        // Helper functions for form field generation
+        function addColumnSelector(container, name, label, required = true) {
+            const div = document.createElement('div');
+            div.className = 'sm:col-span-3';
+            
+            div.innerHTML = `
+                <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
+                <select id="${name}" name="${name}" ${required ? 'required' : ''} class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">Select a column</option>
+                    ${generateColumnOptions()}
+                </select>
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        function addMultiColumnSelector(container, name, label) {
+            const div = document.createElement('div');
+            div.className = 'sm:col-span-6';
+            
+            div.innerHTML = `
+                <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
+                <select id="${name}" name="${name}" multiple class="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    ${generateColumnOptions(false, true)}
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple columns</p>
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        function addCheckbox(container, name, label, checked = false) {
+            const div = document.createElement('div');
+            div.className = 'sm:col-span-6';
+            
+            div.innerHTML = `
+                <div class="flex items-center">
+                    <input id="${name}" name="${name}" type="checkbox" ${checked ? 'checked' : ''} class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="${name}" class="ml-2 block text-sm text-gray-700">
+                        ${label}
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        function addNumberInput(container, name, label, defaultValue = '', min = '', max = '', step = '') {
+            const div = document.createElement('div');
+            div.className = 'sm:col-span-3';
+            
+            div.innerHTML = `
+                <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
+                <input type="number" id="${name}" name="${name}" value="${defaultValue}"
+                    ${min !== '' ? `min="${min}"` : ''} 
+                    ${max !== '' ? `max="${max}"` : ''} 
+                    ${step !== '' ? `step="${step}"` : ''} 
+                    class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        function addSelectInput(container, name, label, options = [], defaultValue = '') {
+            const div = document.createElement('div');
+            div.className = 'sm:col-span-3';
+            
+            let optionsHtml = '';
+            options.forEach(option => {
+                optionsHtml += `<option value="${option}" ${option === defaultValue ? 'selected' : ''}>${option}</option>`;
+            });
+            
+            div.innerHTML = `
+                <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
+                <select id="${name}" name="${name}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    ${optionsHtml}
+                </select>
+            `;
+            
+            container.appendChild(div);
+        }
+        
+        function generateColumnOptions(numericOnly = false, addDataType = false) {
+            if (!dataColumns || !dataColumns.length) {
+                return '<option value="" disabled>No columns available</option>';
+            }
+            
+            let options = '';
+            dataColumns.forEach(column => {
+                // Check if we should only show numeric columns
+                const isNumeric = column.dtype.includes('int') || column.dtype.includes('float');
+                if (numericOnly && !isNumeric) return;
+                
+                const displayName = addDataType ? `${column.name} (${column.dtype})` : column.name;
+                options += `<option value="${column.name}">${displayName}</option>`;
+            });
+            
+            return options;
+        }
+        
+        // Handle cancel button click
+        document.getElementById('cancelVisualizationBtn').addEventListener('click', function() {
+            // Hide configuration and result sections
+            document.getElementById('vizConfig').classList.add('hidden');
+            document.getElementById('vizResult').classList.add('hidden');
+            
+            // Clear selection
+            document.querySelectorAll('.viz-type-card').forEach(c => {
+                c.classList.remove('ring-2', 'ring-indigo-500');
+            });
+            
+            // Reset form
+            document.getElementById('vizForm').reset();
+        });
         
         // Handle visualization form submission
         document.getElementById('vizForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Show loading state
+            document.getElementById('vizResult').classList.remove('hidden');
+            document.getElementById('plotContainer').innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-indigo-500 text-3xl"></i></div>';
+            
+            // Collect form data
+            const formData = new FormData(this);
             const vizType = document.getElementById('vizType').value;
-            const xAxis = document.getElementById('xAxis').value;
-            const yAxis = document.getElementById('yAxis').value;
             
-            // More robust method to check if checkbox exists and is checked
-            let useIndex = false;
-            const useIndexCheckbox = document.getElementById('vizUseIndex');
-            if (useIndexCheckbox) {
-                useIndex = useIndexCheckbox.checked;
-                console.log(`Form submission - useIndex element exists, checked=${useIndex}`);
-            } else {
-                console.log('Form submission - useIndex element not found in DOM');
-            }
-            
-            console.log(`Validating ${vizType} chart - useIndex: ${useIndex}, xAxis: "${xAxis}", yAxis: "${yAxis}"`);
-            
-            // Initialize params object with core parameters
-            const params = {
-                x: xAxis,
-                y: yAxis,
-                use_index: useIndex
-            };
-            
-            // Enhanced validation for specific chart types
-            if (vizType === 'scatter' || vizType === 'line') {
-                if (useIndex) {
-                    // With index option, we need AT LEAST ONE of x OR y
-                    if (!xAxis && !yAxis) {
-                        alert('With "Use Index" option enabled, please select at least one column (either X-Axis or Y-Axis)');
-                        return;
+            // Convert form data to object
+            const params = {};
+            for (const [key, value] of formData.entries()) {
+                // Handle multi-select fields
+                if (key.endsWith('[]')) {
+                    const cleanKey = key.slice(0, -2);
+                    if (!params[cleanKey]) {
+                        params[cleanKey] = [];
                     }
-                    console.log("Validation passed with Use Index option");
-                } else {
-                    // Without index option, we need BOTH x AND y
-                    if (!xAxis || !yAxis) {
-                        alert(`Please select both X and Y axis columns for the ${vizType} chart, or enable the "Use Index" option and select one column`);
-                        return;
-                    }
-                    console.log("Validation passed for standard plot with both axes");
+                    params[cleanKey].push(value);
+                } 
+                else if (key === 'use_index') {
+                    // Convert checkbox to boolean
+                    params[key] = true;
                 }
-            } else if (vizType === 'histogram' || vizType === 'distribution') {
-                // Histogram only needs one column (x-axis)
-                if (!xAxis) {
-                    alert(`Please select a column for the ${vizType}`);
-                    return;
-                }
-            } else if (vizType === 'pie') {
-                // Pie charts need both columns
-                if (!xAxis || xAxis.trim() === '') {
-                    alert('Please select a Names/Categories column (X-Axis) for the pie chart');
-                    return;
-                }
-                if (!yAxis || yAxis.trim() === '') {
-                    alert('Please select a Values column (Y-Axis) for the pie chart');
-                    return;
-                }
-                
-                // Add detailed logging to help debug pie chart issues
-                console.log(`Pie chart validation passed: X="${xAxis}", Y="${yAxis}"`);
-                console.log(`X-axis element:`, document.getElementById('xAxis'));
-                console.log(`Y-axis element:`, document.getElementById('yAxis'));
-            } else if (vizType === 'box') {
-                // Box plots need at least Y-axis
-                if (!yAxis) {
-                    alert('Please select a Values column (Y-Axis) for the box plot');
-                    return;
-                }
-                
-                // For box plots, specifically check if selected columns exist and Y-axis is numeric
-                const ySelect = document.getElementById('yAxis');
-                const yColumn = ySelect.options[ySelect.selectedIndex];
-                
-                if (yColumn && yColumn.textContent.includes('object') && !yColumn.textContent.includes('int') && !yColumn.textContent.includes('float')) {
-                    if (!confirm('The selected Y-axis column does not appear to be numeric. Box plots work best with numeric data. Continue anyway?')) {
-                        return;
-                    }
-                }
-            } else if (vizType === 'bar') {
-                // Bar charts need both axes
-                if (!xAxis || !yAxis) {
-                    alert('Please select both X and Y axis columns for the bar chart');
-                    return;
-                }
-            } else if (vizType === 'heatmap') {
-                // Heatmaps need both x and y axes
-                if (!xAxis || !yAxis) {
-                    alert('Please select both X and Y axis columns for the heatmap');
-                    return;
-                }
-                
-                // Get z-axis value if provided
-                const zAxis = document.getElementById('zAxis')?.value;
-                if (zAxis) {
-                    params.z = zAxis;
-                }
-            } else if (vizType === 'correlation') {
-                // Correlation charts don't need x/y axes, they'll use all numeric columns
-                // No validation needed here
-            } else if (vizType === 'scatter_3d') {
-                // 3D scatter plots need all three axes
-                const zAxis = document.getElementById('zAxis').value;
-                if (!xAxis || !yAxis || !zAxis) {
-                    alert('Please select X, Y, and Z axis columns for the 3D scatter plot');
-                    return;
-                }
-                
-                // Add z-axis to params
-                params.z = zAxis;
-                
-                // Add color if provided
-                const colorAxis = document.getElementById('colorAxis')?.value;
-                if (colorAxis) {
-                    params.color = colorAxis;
-                }
-            } else if (vizType === 'contour' || vizType === 'density_contour') {
-                // Contour plots need both x and y axes and they should be numeric
-                if (!xAxis || !yAxis) {
-                    alert(`Please select both X and Y axis columns for the ${vizType}`);
-                    return;
-                }
-                
-                // Check if the columns appear to be numeric
-                const xSelect = document.getElementById('xAxis');
-                const ySelect = document.getElementById('yAxis');
-                const xColumn = xSelect.options[xSelect.selectedIndex];
-                const yColumn = ySelect.options[ySelect.selectedIndex];
-                
-                if ((xColumn && !xColumn.textContent.includes('int') && !xColumn.textContent.includes('float')) ||
-                    (yColumn && !yColumn.textContent.includes('int') && !yColumn.textContent.includes('float'))) {
-                    if (!confirm('One or both of the selected axes do not appear to be numeric. Contour plots work best with numeric data. Continue anyway?')) {
-                        return;
-                    }
-                }
-                
-                // Add z-axis to request params if provided (for contour)
-                if (vizType === 'contour') {
-                    const zAxis = document.getElementById('zAxis')?.value;
-                    if (zAxis) {
-                        params.z = zAxis;
-                    }
-                }
-                
-                // Add colorscale if provided (for both contour and density_contour)
-                const colorscale = document.getElementById('colorscale')?.value;
-                if (colorscale) {
-                    params.colorscale = colorscale;
-                }
-            } else {
-                // Default validation for other chart types
-                if (!xAxis) {
-                    alert('Please select X-Axis column');
-                    return;
+                else {
+                    params[key] = value;
                 }
             }
             
@@ -963,19 +698,10 @@
                 params: params
             };
             
-            // For correlation matrix, get selected columns
-            if (vizType === 'correlation') {
-                const correlationColumns = document.getElementById('correlationColumns');
-                if (correlationColumns) {
-                    requestData.params.columns = Array.from(correlationColumns.selectedOptions).map(opt => opt.value);
-                }
-            }
+            console.log("Sending visualization request:", requestData);
             
-            console.log("Sending visualization request with params:", requestData.params);
-            
-            // Show loading state in the result container
-            document.getElementById('vizResult').classList.remove('hidden');
-            document.getElementById('plotContainer').innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-indigo-500 text-3xl"></i></div>';
+            // Scroll to result section
+            document.getElementById('vizResult').scrollIntoView({ behavior: 'smooth' });
             
             // Make API request
             fetch('/api/visualize', {
@@ -987,7 +713,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log("API response:", data);
                 if (data.error) {
                     showPlotError('plotContainer', data.error);
                     return;
@@ -999,24 +724,10 @@
                         .catch(err => {
                             console.error("Error rendering plot:", err);
                             showPlotError('plotContainer', `Error rendering visualization: ${err.message}`);
-                            
-                            // Store raw data for debugging
-                            window._rawPlotData = data.plot;
-                            window._requestParams = requestData.params;
-                            
-                            // Add debug option
-                            const debugButton = document.createElement('button');
-                            debugButton.className = 'mt-4 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300';
-                            debugButton.innerHTML = '<i class="fas fa-bug mr-1"></i> Debug Plot Data';
-                            debugButton.onclick = showDebugData;
-                            document.getElementById('plotContainer').appendChild(debugButton);
                         });
-                } catch (err) {
-                    console.error("Error processing plot data:", err);
-                    showPlotError('plotContainer', `Error processing plot data: ${err.message}`);
-                    
-                    // Store raw data for debugging
-                    window._rawPlotData = data.plot;
+                } catch (error) {
+                    console.error('Error rendering visualization:', error);
+                    showPlotError('plotContainer', 'Error rendering visualization');
                 }
             })
             .catch(error => {
@@ -1025,43 +736,29 @@
             });
         });
 
-        // Function to show debug data in a modal
-        function showDebugData() {
-            if (window._rawPlotData) {
-                try {
-                    const rawData = typeof window._rawPlotData === 'string' 
-                        ? JSON.parse(window._rawPlotData) 
-                        : window._rawPlotData;
-                    
-                    const debugModal = document.createElement('div');
-                    debugModal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
-                    debugModal.innerHTML = `
-                        <div class="bg-white rounded-lg w-3/4 max-h-3/4 overflow-auto p-4">
-                            <div class="flex justify-between items-center border-b pb-2 mb-4">
-                                <h3 class="text-lg font-medium">Plot Debug Information</h3>
-                                <button class="text-gray-500 hover:text-gray-700" onclick="this.parentNode.parentNode.parentNode.remove()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div class="mb-4">
-                                <h4 class="font-medium text-gray-700 mb-2">Selected Parameters:</h4>
-                                <p>Visualization Type: <span class="font-mono">${document.getElementById('vizType').value}</span></p>
-                                <p>X-Axis: <span class="font-mono">${document.getElementById('xAxis').value || 'None'}</span></p>
-                                <p>Y-Axis: <span class="font-mono">${document.getElementById('yAxis').value || 'None'}</span></p>
-                                <p>Use Index: <span class="font-mono">${document.getElementById('vizUseIndex')?.checked || false}</span></p>
-                                <p>Form Request Data: <span class="font-mono">${JSON.stringify(window._requestParams)}</span></p>
-                            </div>
-                            <h4 class="font-medium text-gray-700 mb-2">Raw Plot Data:</h4>
-                            <pre class="text-xs overflow-auto p-2 bg-gray-100 rounded max-h-96">${JSON.stringify(rawData, null, 2)}</pre>
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Populate visualization cards from visualization-types.js
+            populateVisualizations();
+            
+            // After cards are created, initialize their event handlers
+            setTimeout(() => {
+                initializeVisualizationCards();
+            }, 100);
+        });
+        
+        // Function to show error messages in plot container
+        function showPlotError(containerId, message) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="text-center text-red-500">
+                            <i class="fas fa-exclamation-circle text-4xl mb-3"></i>
+                            <p>${message}</p>
                         </div>
-                    `;
-                    document.body.appendChild(debugModal);
-                } catch (err) {
-                    console.error('Error parsing debug data:', err);
-                    alert('Error parsing plot data for debug display');
-                }
-            } else {
-                alert('No plot data available for debugging');
+                    </div>
+                `;
             }
         }
     </script>

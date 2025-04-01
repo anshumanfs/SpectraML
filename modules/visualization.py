@@ -996,6 +996,316 @@ class Visualizer:
                 else:
                     raise ValueError("Density contour plot requires both X and Y columns")
             
+            # 3D SCATTER PLOT
+            elif viz_type == 'scatter_3d':
+                if x and y:
+                    # Need a z column for 3D plot
+                    z = params.get('z')
+                    if not z or z not in plot_df.columns:
+                        raise ValueError("3D scatter plot requires X, Y, and Z columns")
+                    
+                    # Make sure all columns are numeric
+                    for col, col_name in [(x, 'X'), (y, 'Y'), (z, 'Z')]:
+                        if not pd.api.types.is_numeric_dtype(plot_df[col]):
+                            try:
+                                plot_df[col] = pd.to_numeric(plot_df[col], errors='coerce')
+                                print(f"Converted {col_name} column '{col}' to numeric for 3D scatter plot")
+                            except:
+                                raise ValueError(f"{col_name} column '{col}' must be numeric for 3D scatter plot")
+                    
+                    # Drop NaNs in z column as well
+                    plot_df = plot_df.dropna(subset=[z])
+                    
+                    if len(plot_df) < 3:
+                        raise ValueError("Not enough valid data points for 3D scatter plot after filtering")
+                    
+                    # Create 3D scatter plot
+                    fig = px.scatter_3d(
+                        plot_df,
+                        x=x,
+                        y=y,
+                        z=z,
+                        color=color if color in plot_df.columns else None,
+                        title=title,
+                        opacity=0.7
+                    )
+                    
+                    # Improve the appearance
+                    fig.update_layout(
+                        scene = dict(
+                            xaxis_title=x,
+                            yaxis_title=y,
+                            zaxis_title=z
+                        ),
+                        margin=dict(l=0, r=0, b=0, t=30)
+                    )
+                    
+                    return fig
+                else:
+                    raise ValueError("3D scatter plot requires X, Y, and Z columns")
+                
+            # 3D SURFACE PLOT
+            elif viz_type == 'surface_3d':
+                if x and y:
+                    # Need a z column for surface plot
+                    z = params.get('z')
+                    if not z or z not in plot_df.columns:
+                        raise ValueError("3D surface plot requires X, Y, and Z columns")
+                    
+                    # Make sure all columns are numeric
+                    for col, col_name in [(x, 'X'), (y, 'Y'), (z, 'Z')]:
+                        if not pd.api.types.is_numeric_dtype(plot_df[col]):
+                            try:
+                                plot_df[col] = pd.to_numeric(plot_df[col], errors='coerce')
+                                print(f"Converted {col_name} column '{col}' to numeric for 3D surface plot")
+                            except:
+                                raise ValueError(f"{col_name} column '{col}' must be numeric for 3D surface plot")
+                    
+                    # Drop NaNs in z column as well
+                    plot_df = plot_df.dropna(subset=[z])
+                    
+                    if len(plot_df) < 10:
+                        raise ValueError("Not enough valid data points for 3D surface plot after filtering")
+                    
+                    try:
+                        # For surface plots, data must be on a grid
+                        from scipy.interpolate import griddata
+                        
+                        # Extract arrays
+                        x_arr = plot_df[x].values
+                        y_arr = plot_df[y].values
+                        z_arr = plot_df[z].values
+                        
+                        # Create a regular grid
+                        x_grid = np.linspace(x_arr.min(), x_arr.max(), 50)
+                        y_grid = np.linspace(y_arr.min(), y_arr.max(), 50)
+                        X, Y = np.meshgrid(x_grid, y_grid)
+                        
+                        # Interpolate Z values
+                        Z = griddata((x_arr, y_arr), z_arr, (X, Y), method='cubic', fill_value=np.nan)
+                        
+                        # Create surface plot with interpolated grid data
+                        fig = go.Figure(data=[go.Surface(z=Z, x=x_grid, y=y_grid, colorscale='Viridis')])
+                        
+                        fig.update_layout(
+                            title=title,
+                            scene = dict(
+                                xaxis_title=x,
+                                yaxis_title=y,
+                                zaxis_title=z
+                            ),
+                            margin=dict(l=0, r=0, b=0, t=30)
+                        )
+                        
+                        return fig
+                    except Exception as e:
+                        print(f"Error creating surface plot: {str(e)}")
+                        raise ValueError(f"Could not create surface plot: {str(e)}")
+                else:
+                    raise ValueError("3D surface plot requires X, Y, and Z columns")
+                
+            # PARALLEL COORDINATES
+            elif viz_type == 'parallel_coordinates':
+                # Get columns to include
+                columns = params.get('columns', [])
+                if not columns:
+                    # If no columns specified, use all numeric columns
+                    columns = plot_df.select_dtypes(include=['number']).columns.tolist()
+                    
+                if len(columns) < 2:
+                    raise ValueError("Parallel coordinates plot requires at least 2 numeric columns")
+                
+                # Ensure columns exist in DataFrame
+                columns = [col for col in columns if col in plot_df.columns]
+                
+                # Check if we have enough columns after filtering
+                if len(columns) < 2:
+                    raise ValueError("Not enough valid columns for parallel coordinates plot")
+                
+                # Create a color column if specified
+                color_col = color if color in plot_df.columns else None
+                
+                try:
+                    fig = px.parallel_coordinates(
+                        plot_df, 
+                        dimensions=columns,
+                        color=color_col,
+                        title=title
+                    )
+                    
+                    fig.update_layout(
+                        font=dict(size=10),
+                        margin=dict(l=80, r=80, t=60, b=30)
+                    )
+                    
+                    return fig
+                except Exception as e:
+                    print(f"Error creating parallel coordinates plot: {str(e)}")
+                    raise ValueError(f"Failed to create parallel coordinates plot: {str(e)}")
+                
+            # TREEMAP
+            elif viz_type == 'treemap':
+                # Need path columns and value column
+                path_cols = params.get('path', [])
+                value_col = params.get('values')
+                
+                if not path_cols or not path_cols[0] in plot_df.columns:
+                    raise ValueError("Treemap requires at least one path column")
+                    
+                if not value_col or value_col not in plot_df.columns:
+                    raise ValueError("Treemap requires a values column for sizes")
+                
+                # Ensure value column is numeric
+                if not pd.api.types.is_numeric_dtype(plot_df[value_col]):
+                    try:
+                        plot_df[value_col] = pd.to_numeric(plot_df[value_col], errors='coerce')
+                        print(f"Converted values column '{value_col}' to numeric for treemap")
+                    except:
+                        raise ValueError(f"Values column '{value_col}' must be numeric for treemap")
+                
+                # Filter to only existing path columns
+                path_cols = [col for col in path_cols if col in plot_df.columns]
+                
+                if not path_cols:
+                    raise ValueError("No valid path columns found for treemap")
+                
+                # Remove NaN values from value column and path columns
+                plot_df = plot_df.dropna(subset=[value_col] + path_cols)
+                
+                if plot_df.empty:
+                    raise ValueError("No valid data points after removing NaN values")
+                
+                try:
+                    fig = px.treemap(
+                        plot_df,
+                        path=path_cols,
+                        values=value_col,
+                        color=color if color in plot_df.columns else None,
+                        title=title
+                    )
+                    
+                    fig.update_layout(
+                        margin=dict(l=0, r=0, b=0, t=30)
+                    )
+                    
+                    return fig
+                except Exception as e:
+                    print(f"Error creating treemap: {str(e)}")
+                    raise ValueError(f"Failed to create treemap: {str(e)}")
+                
+            # SUNBURST CHART
+            elif viz_type == 'sunburst':
+                # Need path columns and value column
+                path_cols = params.get('path', [])
+                value_col = params.get('values')
+                
+                if not path_cols or not path_cols[0] in plot_df.columns:
+                    raise ValueError("Sunburst chart requires at least one path column")
+                    
+                if not value_col or value_col not in plot_df.columns:
+                    raise ValueError("Sunburst chart requires a values column for sizes")
+                
+                # Ensure value column is numeric
+                if not pd.api.types.is_numeric_dtype(plot_df[value_col]):
+                    try:
+                        plot_df[value_col] = pd.to_numeric(plot_df[value_col], errors='coerce')
+                        print(f"Converted values column '{value_col}' to numeric for sunburst chart")
+                    except:
+                        raise ValueError(f"Values column '{value_col}' must be numeric for sunburst chart")
+                
+                # Filter to only existing path columns
+                path_cols = [col for col in path_cols if col in plot_df.columns]
+                
+                if not path_cols:
+                    raise ValueError("No valid path columns found for sunburst chart")
+                
+                # Remove NaN values
+                plot_df = plot_df.dropna(subset=[value_col] + path_cols)
+                
+                if plot_df.empty:
+                    raise ValueError("No valid data points after removing NaN values")
+                
+                try:
+                    fig = px.sunburst(
+                        plot_df,
+                        path=path_cols,
+                        values=value_col,
+                        color=color if color in plot_df.columns else None,
+                        title=title
+                    )
+                    
+                    fig.update_layout(
+                        margin=dict(l=0, r=0, b=0, t=30)
+                    )
+                    
+                    return fig
+                except Exception as e:
+                    print(f"Error creating sunburst chart: {str(e)}")
+                    raise ValueError(f"Failed to create sunburst chart: {str(e)}")
+
+            # RADAR/POLAR CHART
+            elif viz_type == 'radar':
+                # Need categories (theta) and values (r)
+                theta_col = params.get('theta')
+                r_col = params.get('r')
+                
+                if not theta_col or theta_col not in plot_df.columns:
+                    raise ValueError("Radar chart requires a theta (categories) column")
+                    
+                if not r_col or r_col not in plot_df.columns:
+                    raise ValueError("Radar chart requires an r (values) column")
+                
+                # Ensure r column is numeric
+                if not pd.api.types.is_numeric_dtype(plot_df[r_col]):
+                    try:
+                        plot_df[r_col] = pd.to_numeric(plot_df[r_col], errors='coerce')
+                        print(f"Converted r column '{r_col}' to numeric for radar chart")
+                    except:
+                        raise ValueError(f"Values column '{r_col}' must be numeric for radar chart")
+                
+                # Remove NaN values
+                plot_df = plot_df.dropna(subset=[theta_col, r_col])
+                
+                if plot_df.empty:
+                    raise ValueError("No valid data points after removing NaN values")
+                
+                try:
+                    # Create the radar chart with plotly.graph_objects for more control
+                    fig = go.Figure()
+                    
+                    if color and color in plot_df.columns:
+                        # Group by color column
+                        for group_name, group_df in plot_df.groupby(color):
+                            fig.add_trace(go.Scatterpolar(
+                                r=group_df[r_col],
+                                theta=group_df[theta_col],
+                                fill='toself',
+                                name=str(group_name)
+                            ))
+                    else:
+                        # Single trace radar chart
+                        fig.add_trace(go.Scatterpolar(
+                            r=plot_df[r_col],
+                            theta=plot_df[theta_col],
+                            fill='toself'
+                        ))
+                    
+                    fig.update_layout(
+                        title=title,
+                        polar=dict(
+                            radialaxis=dict(
+                                visible=True,
+                                range=[0, plot_df[r_col].max() * 1.1]
+                            )
+                        ),
+                        showlegend=True if color else False
+                    )
+                    
+                    return fig
+                except Exception as e:
+                    print(f"Error creating radar chart: {str(e)}")
+                    raise ValueError(f"Failed to create radar chart: {str(e)}")
+            
             else:
                 # Default to scatter plot for unimplemented types
                 print(f"Warning: Advanced plot type '{viz_type}' not specifically implemented. Using scatter plot as fallback.")
@@ -1105,6 +1415,264 @@ class Visualizer:
             )
             
             return fig
+        
+        elif viz_type == 'qq_plot':
+            # Get the column to plot
+            column = params.get('column')
+            
+            if not column or column not in df.columns:
+                raise ValueError("Q-Q plot requires a valid column")
+                
+            # Ensure the column is numeric
+            if not pd.api.types.is_numeric_dtype(df[column]):
+                try:
+                    df[column] = pd.to_numeric(df[column], errors='coerce')
+                except:
+                    raise ValueError(f"Column {column} must be numeric for Q-Q plot")
+            
+            # Drop NaNs
+            data = df[column].dropna()
+            
+            if len(data) < 3:
+                raise ValueError("Not enough valid data points for Q-Q plot")
+            
+            try:
+                # Create QQ plot using scipy and plotly
+                from scipy import stats
+                
+                # Calculate quantiles
+                quantiles = np.linspace(0.01, 0.99, min(100, len(data)))
+                sample_quantiles = np.quantile(data, quantiles)
+                theoretical_quantiles = stats.norm.ppf(quantiles)
+                
+                # Create scatter plot of quantiles
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=theoretical_quantiles,
+                    y=sample_quantiles,
+                    mode='markers',
+                    marker=dict(color='blue', size=8),
+                    name=column
+                ))
+                
+                # Add reference line
+                min_val = min(theoretical_quantiles.min(), sample_quantiles.min())
+                max_val = max(theoretical_quantiles.max(), sample_quantiles.max())
+                fig.add_trace(go.Scatter(
+                    x=[min_val, max_val],
+                    y=[min_val, max_val],
+                    mode='lines',
+                    line=dict(color='red', dash='dash'),
+                    name='Reference Line'
+                ))
+                
+                fig.update_layout(
+                    title=title,
+                    xaxis_title='Theoretical Quantiles',
+                    yaxis_title='Sample Quantiles',
+                    showlegend=True
+                )
+                
+                return fig
+            except Exception as e:
+                print(f"Error creating Q-Q plot: {str(e)}")
+                raise ValueError(f"Failed to create Q-Q plot: {str(e)}")
+        
+        elif viz_type == 'residual_plot':
+            # Need x (predictor) and y (response) columns
+            x_col = params.get('x')
+            y_col = params.get('y')
+            
+            if not x_col or x_col not in df.columns:
+                raise ValueError("Residual plot requires a predictor (x) column")
+                
+            if not y_col or y_col not in df.columns:
+                raise ValueError("Residual plot requires a response (y) column")
+            
+            # Ensure columns are numeric
+            for col, label in [(x_col, 'Predictor'), (y_col, 'Response')]:
+                if not pd.api.types.is_numeric_dtype(df[col]):
+                    try:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                    except:
+                        raise ValueError(f"{label} column '{col}' must be numeric for residual plot")
+            
+            # Drop NaN values
+            plot_df = df.dropna(subset=[x_col, y_col])
+            
+            if len(plot_df) < 3:
+                raise ValueError("Not enough valid data points for residual plot")
+            
+            try:
+                # Fit a linear regression model
+                from scipy import stats
+                
+                x_values = plot_df[x_col].values
+                y_values = plot_df[y_col].values
+                
+                # Add a constant to x for the intercept
+                X = np.column_stack((np.ones(len(x_values)), x_values))
+                
+                # Fit the model
+                beta, residuals, rank, s = np.linalg.lstsq(X, y_values, rcond=None)
+                
+                # Calculate predicted values
+                y_pred = beta[0] + beta[1] * x_values
+                
+                # Calculate residuals
+                residuals = y_values - y_pred
+                
+                # Create residual plot
+                fig = go.Figure()
+                
+                # Add residuals scatter plot
+                fig.add_trace(go.Scatter(
+                    x=x_values,
+                    y=residuals,
+                    mode='markers',
+                    marker=dict(color='blue', size=8),
+                    name='Residuals'
+                ))
+                
+                # Add zero line
+                fig.add_trace(go.Scatter(
+                    x=[min(x_values), max(x_values)],
+                    y=[0, 0],
+                    mode='lines',
+                    line=dict(color='red', dash='dash'),
+                    name='Zero Line'
+                ))
+                
+                fig.update_layout(
+                    title=title,
+                    xaxis_title=x_col,
+                    yaxis_title=f'Residuals ({y_col} - predicted {y_col})',
+                    showlegend=True
+                )
+                
+                return fig
+            except Exception as e:
+                print(f"Error creating residual plot: {str(e)}")
+                raise ValueError(f"Failed to create residual plot: {str(e)}")
+        
+        elif viz_type == 'pair_plot':
+            # Get columns to include in pair plot
+            columns = params.get('columns', [])
+            
+            if not columns:
+                # If no columns specified, use all numeric columns (up to a limit)
+                numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+                columns = numeric_cols[:min(5, len(numeric_cols))]  # Limit to 5 columns
+            
+            # Validate columns exist in dataframe
+            columns = [col for col in columns if col in df.columns]
+            
+            if len(columns) < 2:
+                raise ValueError("Pair plot requires at least 2 valid numeric columns")
+            
+            # Get optional color column
+            color_col = params.get('color')
+            if color_col and color_col not in df.columns:
+                print(f"Warning: Color column '{color_col}' not found in dataset")
+                color_col = None
+            
+            try:
+                # Create a smaller dataframe with just the needed columns
+                plot_df = df[columns + ([color_col] if color_col else [])]
+                plot_df = plot_df.dropna()
+                
+                if plot_df.empty:
+                    raise ValueError("No valid data points after removing NaN values")
+                
+                # Create pair plot using plotly
+                fig = px.scatter_matrix(
+                    plot_df,
+                    dimensions=columns,
+                    color=color_col,
+                    title=title
+                )
+                
+                # Improve the appearance
+                fig.update_traces(
+                    diagonal_visible=False,
+                    showupperhalf=False,
+                    marker=dict(size=4)
+                )
+                
+                fig.update_layout(
+                    height=600,
+                    width=700,
+                    title=dict(
+                        text=title,
+                        x=0.5
+                    )
+                )
+                
+                return fig
+            except Exception as e:
+                print(f"Error creating pair plot: {str(e)}")
+                raise ValueError(f"Failed to create pair plot: {str(e)}")
+        
+        elif viz_type == 'cluster_map':
+            # Get columns to include
+            columns = params.get('columns', [])
+            
+            if not columns:
+                # If no columns specified, use all numeric columns
+                columns = df.select_dtypes(include=['number']).columns.tolist()
+            
+            # Validate columns exist in dataframe
+            columns = [col for col in columns if col in df.columns]
+            
+            if len(columns) < 2:
+                raise ValueError("Cluster map requires at least 2 valid numeric columns")
+            
+            try:
+                # Create a dataframe with just the needed columns
+                plot_df = df[columns].dropna()
+                
+                if plot_df.empty:
+                    raise ValueError("No valid data points after removing NaN values")
+                
+                # Compute the correlation matrix
+                corr_matrix = plot_df.corr()
+                
+                # Compute linkage for hierarchical clustering
+                from scipy.cluster.hierarchy import linkage
+                
+                # Convert correlation to distance (1 - corr)
+                distance_matrix = 1 - np.abs(corr_matrix)
+                
+                # Perform clustering (using condensed distance matrix)
+                z = linkage(distance_matrix.values.flatten(), method='ward')
+                
+                # Get order of indices for dendrogram
+                from scipy.cluster.hierarchy import dendrogram
+                dendro = dendrogram(z, no_plot=True)
+                
+                # Get ordered indices
+                ordered_indices = dendro['leaves']
+                
+                # Reorder correlation matrix
+                ordered_corr = corr_matrix.iloc[ordered_indices, ordered_indices]
+                
+                # Create heatmap
+                fig = px.imshow(
+                    ordered_corr,
+                    text_auto=params.get('show_values', True),
+                    color_continuous_scale=params.get('colorscale', 'RdBu_r'),
+                    title=title
+                )
+                
+                fig.update_layout(
+                    height=600,
+                    width=700
+                )
+                
+                return fig
+            except Exception as e:
+                print(f"Error creating cluster map: {str(e)}")
+                raise ValueError(f"Failed to create cluster map: {str(e)}")
         
         else:
             raise ValueError(f"Statistical visualization type {viz_type} is not implemented")
