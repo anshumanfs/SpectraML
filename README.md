@@ -1,3 +1,5 @@
+![image](https://github.com/user-attachments/assets/0bfaa687-c116-42ae-b60a-d7dabe1743da)
+
 # SpectraML - Comprehensive Data Science Platform
 
 SpectraML is a web-based application for data analysis, visualization, machine learning model training, and image processing. This tool enables data scientists and analysts to work efficiently with various data types through an intuitive interface.
