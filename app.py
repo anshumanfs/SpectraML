@@ -176,6 +176,44 @@ def visualize_data():
         return jsonify({"success": False, "error": str(e)})
 
 
+@app.route("/api/feature-engineering/preview", methods=["POST"])
+def preview_feature_engineering():
+    """Preview the results of feature engineering operations"""
+    data = request.json
+    file_path = os.path.join(app.config["UPLOAD_FOLDER"], data.get("filename"))
+    operations = data.get("operations", [])
+
+    try:
+        # Log input for debugging
+        logging.info(f"Preview request for file: {file_path}")
+        logging.info(f"Operations: {json.dumps(operations)}")
+        
+        # Validate operations before proceeding
+        for op in operations:
+            if 'type' not in op:
+                return jsonify({"success": False, "error": "Operation missing 'type' field"})
+            if op['type'] not in feature_engineer.supported_operations:
+                return jsonify({"success": False, "error": f"Unsupported operation type: {op['type']}"})
+        
+        # Call feature engineer to preview operations
+        result = feature_engineer.preview_operations(file_path, operations, max_rows=10)
+        
+        # Log some basic information about the result
+        if result['success']:
+            preview = result.get('preview', {})
+            logging.info(f"Preview generated successfully. Rows: {preview.get('total_rows', 0)}, Columns: {len(preview.get('columns', []))}")
+        else:
+            logging.error(f"Error in preview: {result.get('error')}")
+            # Include traceback in the response for debugging
+            if 'traceback' in result:
+                logging.error(result['traceback'])
+        
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"Error previewing feature engineering: {str(e)}", exc_info=True)
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route("/api/feature-engineering", methods=["POST"])
 def apply_feature_engineering():
     """Apply feature engineering operations and save the result as a new dataset"""
@@ -185,9 +223,24 @@ def apply_feature_engineering():
     experiment_id = data.get("experiment_id")
 
     try:
+        # Log input for debugging
+        logging.info(f"Applying feature engineering to file: {file_path}")
+        logging.info(f"Operations count: {len(operations)}")
+        
+        # Validate operations before proceeding
+        for op in operations:
+            if 'type' not in op:
+                return jsonify({"success": False, "error": "Operation missing 'type' field"})
+            if op['type'] not in feature_engineer.supported_operations:
+                return jsonify({"success": False, "error": f"Unsupported operation type: {op['type']}"})
+        
         # Apply operations and save result
         result = feature_engineer.apply_operations(file_path, operations)
-
+        
+        if not result['success']:
+            logging.error(f"Error applying operations: {result.get('error')}")
+            return jsonify(result)
+        
         # Register the new processed dataset with the experiment
         processed_filename = os.path.basename(result["output_file"])
         file_type = processed_filename.split(".")[-1].lower()
@@ -198,8 +251,10 @@ def apply_feature_engineering():
             "processing_date": datetime.now().isoformat(),
             "operations": operations,
             "processing_stats": {
-                "original_rows": result["data_info"]["num_rows"],
-                "original_columns": result["data_info"]["num_columns"],
+                "original_rows": result["original_shape"]["rows"],
+                "original_columns": result["original_shape"]["columns"],
+                "final_rows": result["final_shape"]["rows"],
+                "final_columns": result["final_shape"]["columns"],
             },
         }
 
@@ -210,17 +265,17 @@ def apply_feature_engineering():
             filetype=file_type,
             metadata=json.dumps(metadata),
         )
+        
+        logging.info(f"Feature engineering successful. New dataset ID: {dataset_id}")
 
-        return jsonify(
-            {
-                "success": True,
-                "dataset_id": dataset_id,
-                "filename": processed_filename,
-                "data_info": result["data_info"],
-            }
-        )
+        return jsonify({
+            "success": True,
+            "dataset_id": dataset_id,
+            "filename": processed_filename,
+            "data_info": result["data_info"],
+        })
     except Exception as e:
-        logging.error(f"Error applying feature engineering: {str(e)}")
+        logging.error(f"Error applying feature engineering: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": str(e)})
 
 
@@ -416,22 +471,6 @@ def train_model_page(exp_id):
     return render_template("train_model.html", experiment=experiment, datasets=datasets)
 
 
-@app.route("/api/feature-engineering/preview", methods=["POST"])
-def preview_feature_engineering():
-    """Preview the results of feature engineering operations"""
-    data = request.json
-    file_path = os.path.join(app.config["UPLOAD_FOLDER"], data.get("filename"))
-    operations = data.get("operations", [])
-
-    try:
-        # Call feature engineer to preview operations
-        result = feature_engineer.preview_operations(file_path, operations, max_rows=10)
-        return jsonify(result)
-    except Exception as e:
-        logging.error(f"Error previewing feature engineering: {str(e)}")
-        return jsonify({"success": False, "error": str(e)})
-
-
 @app.route("/api/dataset/preview/<dataset_id>", methods=["GET"])
 def preview_dataset(dataset_id):
     """Get a preview of a dataset"""
@@ -469,10 +508,34 @@ def get_dataset_columns(dataset_id):
         # Use DataLoader to get data info
         file_type = dataset["filetype"]
         data_info = loader.get_data_info(file_path, file_type)
+        
+        # Return detailed column metadata
+        columns = []
+        for col in data_info.get("columns", []):
+            column_info = {
+                "name": col["name"],
+                "dtype": col["dtype"],
+                "null_count": col.get("null_count", 0),
+                "null_percent": col.get("missing_pct", 0)
+            }
+            
+            # Add stats for numeric columns
+            if "min" in col:
+                column_info.update({
+                    "min": col["min"],
+                    "max": col["max"],
+                    "mean": col.get("mean", 0)
+                })
+                
+            # Add sample values if available
+            if "sample_values" in col:
+                column_info["sample_values"] = col["sample_values"]
+                
+            columns.append(column_info)
 
-        return jsonify({"success": True, "columns": data_info["columns"]})
+        return jsonify({"success": True, "columns": columns})
     except Exception as e:
-        logging.error(f"Error getting dataset columns: {str(e)}")
+        logging.error(f"Error getting dataset columns: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": str(e)})
 
 

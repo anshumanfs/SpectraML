@@ -158,6 +158,9 @@ class FeatureEngineer:
                 if op_type not in self.supported_operations:
                     raise ValueError(f"Unsupported operation: {op_type}")
                 
+                # Validate parameters against required parameters
+                self._validate_operation_params(op_type, params)
+                
                 # Apply the operation
                 df, op_result = self._apply_operation(df, op_type, params)
                 operation_results.append(op_result)
@@ -260,6 +263,9 @@ class FeatureEngineer:
                 if op_type not in self.supported_operations:
                     raise ValueError(f"Unsupported operation: {op_type}")
                 
+                # Validate parameters against required parameters
+                self._validate_operation_params(op_type, params)
+                
                 # Apply the operation
                 df, op_result = self._apply_operation(df, op_type, params)
                 operation_results.append(op_result)
@@ -267,16 +273,59 @@ class FeatureEngineer:
             # Generate column information
             columns = []
             for col in df.columns:
+                # Get basic column info
                 col_info = {
                     'name': col,
                     'dtype': str(df[col].dtype),
-                    'sample_values': df[col].dropna().head(3).tolist(),
                     'null_count': int(df[col].isna().sum()),
                 }
+                
+                # Add sample values with smart truncation
+                sample_values = df[col].dropna().head(3).tolist()
+                formatted_values = []
+                for val in sample_values:
+                    if isinstance(val, str) and len(val) > 50:
+                        formatted_values.append(val[:47] + '...')
+                    else:
+                        formatted_values.append(val)
+                col_info['sample_values'] = formatted_values
+                
+                # Add statistics for numeric columns
+                if pd.api.types.is_numeric_dtype(df[col]):
+                    try:
+                        col_info.update({
+                            'min': float(df[col].min()) if not pd.isna(df[col].min()) else None,
+                            'max': float(df[col].max()) if not pd.isna(df[col].max()) else None,
+                            'mean': float(df[col].mean()) if not pd.isna(df[col].mean()) else None
+                        })
+                    except:
+                        # Skip if statistics can't be calculated
+                        pass
+                
                 columns.append(col_info)
             
             # Convert dataframe to records for preview
-            preview_rows = df.head(max_rows).replace({np.nan: None}).to_dict(orient='records')
+            # Handle various data types for proper JSON serialization
+            preview_rows = []
+            for _, row in df.head(max_rows).iterrows():
+                record = {}
+                for col in df.columns:
+                    value = row[col]
+                    if pd.isna(value):
+                        record[col] = None
+                    elif isinstance(value, (pd.Timestamp, np.datetime64)):
+                        record[col] = pd.Timestamp(value).isoformat()
+                    elif isinstance(value, (np.integer, np.int64)):
+                        record[col] = int(value)
+                    elif isinstance(value, (np.floating, np.float64)):
+                        record[col] = float(value)
+                    elif isinstance(value, np.bool_):
+                        record[col] = bool(value)
+                    elif isinstance(value, (list, np.ndarray)):
+                        record[col] = value.tolist() if hasattr(value, 'tolist') else list(value)
+                    else:
+                        record[col] = value
+                preview_rows.append(record)
             
             # Return preview data
             return {
@@ -297,6 +346,42 @@ class FeatureEngineer:
                 'error': str(e),
                 'traceback': traceback.format_exc()
             }
+    
+    def _validate_operation_params(self, op_type, params):
+        """
+        Validate that all required parameters are present
+        
+        Parameters:
+        -----------
+        op_type : str
+            Type of operation
+        params : dict
+            Parameters for the operation
+            
+        Raises:
+        -------
+        ValueError
+            If a required parameter is missing or invalid
+        """
+        op_config = self.supported_operations.get(op_type)
+        if not op_config:
+            raise ValueError(f"Unknown operation type: {op_type}")
+        
+        # Check required parameters
+        for param_name, param_config in op_config.get('parameters', {}).items():
+            if param_config.get('required', False):
+                if param_name not in params:
+                    raise ValueError(f"Missing required parameter '{param_name}' for operation '{op_type}'")
+                
+                # Additional validation - empty values
+                param_value = params[param_name]
+                param_type = param_config.get('type')
+                
+                if param_value is None:
+                    raise ValueError(f"Parameter '{param_name}' cannot be null for operation '{op_type}'")
+                
+                if param_type in ['multicolumn', 'multiselect'] and isinstance(param_value, list) and len(param_value) == 0:
+                    raise ValueError(f"Parameter '{param_name}' must have at least one value for operation '{op_type}'")
     
     def _apply_operation(self, df, op_type, params):
         """
@@ -324,6 +409,9 @@ class FeatureEngineer:
         
         original_shape = df.shape
         
+        # Validate params (this will raise an exception if validation fails)
+        self._validate_operation_params(op_type, params)
+        
         # Filter rows operation
         if op_type == 'filter_rows':
             column = params.get('column')
@@ -342,12 +430,15 @@ class FeatureEngineer:
             elif operation == 'is_not_null':
                 filtered_df = df[df[column].notna()]
             else:
-                if value is None:
+                if operation not in ['>', '<', '==', '!=', '>=', '<=', 'contains', 'starts_with', 'ends_with']:
+                    raise ValueError(f"Invalid operation: {operation}")
+                
+                if value is None and operation not in ['is_null', 'is_not_null']:
                     raise ValueError("Value is required for this filter operation")
                 
                 # Convert value to appropriate type based on column data type
                 col_type = df[column].dtype
-                if pd.api.types.is_numeric_dtype(col_type):
+                if pd.api.types.is_numeric_dtype(col_type) and operation not in ['contains', 'starts_with', 'ends_with']:
                     try:
                         value = float(value)
                     except:
@@ -603,8 +694,8 @@ class FeatureEngineer:
             # Convert to datetime if not already
             try:
                 df[column] = pd.to_datetime(df[column])
-            except:
-                raise ValueError(f"Column {column} cannot be converted to datetime")
+            except Exception as e:
+                raise ValueError(f"Column {column} cannot be converted to datetime: {str(e)}")
             
             # Extract requested components
             component_map = {
@@ -625,9 +716,12 @@ class FeatureEngineer:
                     new_col = f"{column}_{suffix}"
                     df[new_col] = func(df[column])
                     added_columns.append(new_col)
+                else:
+                    raise ValueError(f"Unsupported datetime component: {component}")
             
             result['column'] = column
             result['components_added'] = added_columns
+            result['components_requested'] = components
             
         # Text feature extraction operation
         elif op_type == 'text_extraction':
@@ -700,6 +794,8 @@ class FeatureEngineer:
             result['features_added'] = added_columns
         
         # Add more operations as needed...
+        else:
+            raise ValueError(f"Operation type not implemented: {op_type}")
         
         result['rows_before'] = original_shape[0]
         result['rows_after'] = df.shape[0]
