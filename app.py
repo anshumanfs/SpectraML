@@ -130,6 +130,17 @@ def view_experiment(exp_id):
     return render_template("experiment.html", experiment=experiment)
 
 
+@app.route("/experiment/<exp_id>/upload")
+def upload_to_experiment(exp_id):
+    """Render the upload form for a specific experiment"""
+    experiment = experiment_manager.get_experiment(exp_id)
+    if not experiment:
+        flash("Experiment not found", "error")
+        return redirect("/experiments")
+    
+    return render_template("upload.html", experiment=experiment)
+
+
 @app.route("/api/upload", methods=["POST"])
 def upload_file():
     if "file" not in request.files:
