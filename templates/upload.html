@@ -6,6 +6,13 @@
     <title>Upload Dataset - SpectraML</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Enhanced form element styles */
+        .input-enhanced {
+            @apply border-2 border-gray-300 bg-white shadow-sm rounded-md;
+            @apply focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -55,13 +62,13 @@
                         Supported file types: CSV, Excel, JSON
                     </p>
                     
-                    <div class="mt-6 border-2 border-dashed border-gray-300 rounded-lg p-10" id="dropzone">
+                    <div class="mt-6 border-2 border-dashed border-gray-300 hover:border-indigo-400 rounded-lg p-10" id="dropzone">
                         <div class="text-center">
                             <i class="fas fa-cloud-upload-alt text-indigo-400 text-5xl"></i>
                             <p class="mt-4 text-sm font-medium text-gray-900">
                                 Drag and drop your file here or
                             </p>
-                            <label class="mt-2 relative cursor-pointer inline-flex items-center space-x-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            <label class="mt-2 relative cursor-pointer inline-flex items-center space-x-2 px-4 py-2 border-2 border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                                 <span>Browse files</span>
                                 <input id="file-upload" name="file" type="file" class="sr-only" accept=".csv,.xls,.xlsx,.json">
                             </label>

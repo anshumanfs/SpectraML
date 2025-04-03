@@ -9,6 +9,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="/static/js/visualization-utils.js"></script>
     <script src="/static/js/visualization-types.js"></script>
+    <style>
+        /* Enhanced form styles for better visibility */
+        .form-control {
+            @apply border-2 border-gray-300 bg-white shadow-sm rounded-md;
+            @apply focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500;
+        }
+        
+        /* Visual indicator for the selected form elements */
+        select:focus, input:focus, textarea:focus {
+            @apply border-indigo-500 ring-2 ring-indigo-200;
+        }
+        
+        /* Add a subtle hover effect */
+        select:hover, input:hover {
+            @apply border-gray-400;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -78,6 +95,62 @@
                     {% else %}
                         <p class="mt-2 text-gray-600">Unable to load data information.</p>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Preview Section -->
+        <div class="px-4 py-6 sm:px-0">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-center cursor-pointer" id="preview-header" onclick="togglePreviewSection()">
+                    <div class="flex items-center">
+                        <h2 class="text-lg leading-6 font-medium text-gray-900">Data Preview</h2>
+                        <p class="mt-1 ml-2 max-w-2xl text-sm text-gray-500">Preview of the first 10 rows of the dataset</p>
+                    </div>
+                    <div class="flex items-center">
+                        <button id="refresh-preview-btn" class="inline-flex items-center mr-3 px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200" onclick="event.stopPropagation()">
+                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                        </button>
+                        <i id="preview-toggle-icon" class="fas fa-chevron-up text-gray-500 transition-transform duration-300"></i>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200" id="preview-content-wrapper">
+                    <div id="data-preview-container" class="px-4 py-5 sm:p-6">
+                        <div id="data-preview-loading" class="flex justify-center items-center py-10">
+                            <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="ml-3 text-indigo-600">Loading data preview...</span>
+                        </div>
+                        <div id="data-preview-error" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                            <div class="flex">
+                                <div class="py-1"><i class="fas fa-exclamation-circle text-red-500"></i></div>
+                                <div class="ml-3">
+                                    <p class="text-sm" id="data-preview-error-message">Error loading data preview</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="data-preview-content" class="hidden">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="text-sm text-gray-500">
+                                    <span id="row-count">0</span> rows × <span id="column-count">0</span> columns 
+                                    (showing first <span id="preview-count">10</span> rows)
+                                </div>
+                                <div class="text-sm">
+                                    <span id="file-type-badge" class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">CSV</span>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr id="data-preview-header"></tr>
+                                    </thead>
+                                    <tbody id="data-preview-body" class="bg-white divide-y divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -174,7 +247,156 @@
     </div>
 
     <script>
-        // Visualization options from server
+        // Data Preview Functions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch data preview when page loads
+            fetchDataPreview();
+            
+            // Add event listener for refresh button
+            document.getElementById('refresh-preview-btn').addEventListener('click', fetchDataPreview);
+            
+            // Check for saved preview state and apply it
+            const previewExpanded = localStorage.getItem('dataPreviewExpanded');
+            if (previewExpanded === 'false') {
+                togglePreviewSection(false);
+            }
+        });
+        
+        // Toggle the preview section visibility
+        function togglePreviewSection(show) {
+            const wrapper = document.getElementById('preview-content-wrapper');
+            const toggleIcon = document.getElementById('preview-toggle-icon');
+            
+            if (show === undefined) {
+                // Toggle based on current state
+                show = wrapper.classList.contains('hidden') ? true : false;
+            }
+            
+            if (show) {
+                wrapper.classList.remove('hidden');
+                toggleIcon.classList.remove('fa-chevron-down');
+                toggleIcon.classList.add('fa-chevron-up');
+            } else {
+                wrapper.classList.add('hidden');
+                toggleIcon.classList.remove('fa-chevron-up');
+                toggleIcon.classList.add('fa-chevron-down');
+            }
+            
+            // Save the state to localStorage
+            localStorage.setItem('dataPreviewExpanded', show);
+        }
+        
+        function fetchDataPreview() {
+            const datasetId = '{{ dataset.id }}';
+            const loadingElement = document.getElementById('data-preview-loading');
+            const errorElement = document.getElementById('data-preview-error');
+            const contentElement = document.getElementById('data-preview-content');
+            
+            // Show loading state
+            loadingElement.classList.remove('hidden');
+            errorElement.classList.add('hidden');
+            contentElement.classList.add('hidden');
+            
+            // Make sure preview section is visible when refreshing
+            togglePreviewSection(true);
+            
+            // Fetch data preview from API
+            fetch(`/api/dataset/preview/${datasetId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading state
+                    loadingElement.classList.add('hidden');
+                    
+                    if (data.success) {
+                        // Update dataset metadata display
+                        document.getElementById('row-count').textContent = data.preview.total_rows || 0;
+                        document.getElementById('column-count').textContent = data.preview.columns.length || 0;
+                        document.getElementById('file-type-badge').textContent = data.dataset.filetype.toUpperCase();
+                        
+                        // Render the preview table
+                        renderDataPreview(data.preview);
+                        
+                        // Show content
+                        contentElement.classList.remove('hidden');
+                    } else {
+                        // Show error
+                        document.getElementById('data-preview-error-message').textContent = 
+                            data.error || 'Failed to load data preview';
+                        errorElement.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    // Hide loading state and show error
+                    loadingElement.classList.add('hidden');
+                    document.getElementById('data-preview-error-message').textContent = 
+                        'Network error while loading data preview';
+                    errorElement.classList.remove('hidden');
+                    console.error('Error fetching data preview:', error);
+                });
+        }
+        
+        function renderDataPreview(previewData) {
+            const headerElement = document.getElementById('data-preview-header');
+            const bodyElement = document.getElementById('data-preview-body');
+            
+            // Clear existing content
+            headerElement.innerHTML = '';
+            bodyElement.innerHTML = '';
+            
+            // Render table header
+            const columns = previewData.columns || [];
+            columns.forEach(column => {
+                const th = document.createElement('th');
+                th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                th.textContent = column.name;
+                
+                // Add data type as a tooltip
+                if (column.dtype) {
+                    th.title = `Type: ${column.dtype}`;
+                }
+                
+                headerElement.appendChild(th);
+            });
+            
+            // Render table rows
+            const rows = previewData.rows || [];
+            rows.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                tr.className = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                columns.forEach(column => {
+                    const td = document.createElement('td');
+                    td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                    
+                    // Format cell value based on type
+                    const value = row[column.name];
+                    if (value === null || value === undefined) {
+                        td.innerHTML = '<span class="text-red-500 italic">null</span>';
+                    } else if (typeof value === 'object') {
+                        td.textContent = JSON.stringify(value);
+                    } else {
+                        td.textContent = value;
+                    }
+                    
+                    tr.appendChild(td);
+                });
+                
+                bodyElement.appendChild(tr);
+            });
+            
+            // Add empty state if no rows
+            if (rows.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.className = 'px-6 py-4 text-center text-sm text-gray-500';
+                td.colSpan = columns.length || 1;
+                td.textContent = 'No data available';
+                tr.appendChild(td);
+                bodyElement.appendChild(tr);
+            }
+        }
+        
+        // Existing visualization code
         const vizOptions = {{ viz_options|tojson|safe if viz_options else '{}' }};
         const dataColumns = {{ data_info.columns|tojson|safe if data_info and data_info.columns else '[]' }};
         
@@ -244,12 +466,12 @@
             vizTypeField.value = vizType;
             formFields.appendChild(vizTypeField);
             
-            // Add title field
+            // Add title field with enhanced styling
             const titleField = document.createElement('div');
             titleField.className = 'sm:col-span-6';
             titleField.innerHTML = `
                 <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-                <input type="text" name="title" id="title" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" 
+                <input type="text" name="title" id="title" class="mt-1 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-2 border-gray-300 bg-white rounded-md" 
                        value="${vizType.replace('_', ' ').charAt(0).toUpperCase() + vizType.replace('_', ' ').slice(1)} Visualization">
             `;
             formFields.appendChild(titleField);
@@ -551,7 +773,7 @@
             
             div.innerHTML = `
                 <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
-                <select id="${name}" name="${name}" ${required ? 'required' : ''} class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select id="${name}" name="${name}" ${required ? 'required' : ''} class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 sm:text-sm rounded-md">
                     <option value="">Select a column</option>
                     ${generateColumnOptions()}
                 </select>
@@ -566,7 +788,7 @@
             
             div.innerHTML = `
                 <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
-                <select id="${name}" name="${name}" multiple class="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select id="${name}" name="${name}" multiple class="mt-1 block w-full pl-3 pr-10 py-3 text-base border-2 border-gray-300 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 sm:text-sm rounded-md">
                     ${generateColumnOptions(false, true)}
                 </select>
                 <p class="mt-1 text-xs text-gray-500">Hold Ctrl/Cmd to select multiple columns</p>
@@ -601,7 +823,7 @@
                     ${min !== '' ? `min="${min}"` : ''} 
                     ${max !== '' ? `max="${max}"` : ''} 
                     ${step !== '' ? `step="${step}"` : ''} 
-                    class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    class="mt-1 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-2 border-gray-300 bg-white rounded-md">
             `;
             
             container.appendChild(div);
@@ -618,7 +840,7 @@
             
             div.innerHTML = `
                 <label for="${name}" class="block text-sm font-medium text-gray-700">${label}</label>
-                <select id="${name}" name="${name}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select id="${name}" name="${name}" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-2 border-gray-300 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 sm:text-sm rounded-md">
                     ${optionsHtml}
                 </select>
             `;
